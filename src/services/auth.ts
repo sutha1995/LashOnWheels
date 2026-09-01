@@ -40,14 +40,14 @@ export async function signOut() {
   return { error: null };
 }
 
-export async function signInWithGithub(): Promise<{ error: Error | null }> {
+export async function signInWithGoogle(): Promise<{ error: Error | null }> {
   if (!supabase) {
     return { error: new Error('Supabase is not configured.') };
   }
 
   const redirectTo = Linking.createURL('auth/callback');
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'github',
+    provider: 'google',
     options: {
       redirectTo,
       skipBrowserRedirect: Platform.OS !== 'web',
@@ -62,27 +62,27 @@ export async function signInWithGithub(): Promise<{ error: Error | null }> {
   if (Platform.OS === 'web') {
     if (!data.url) {
       await clearPendingSignupRole();
-      return { error: new Error('Supabase did not return a GitHub sign-in URL.') };
+      return { error: new Error('Supabase did not return a Google sign-in URL.') };
     }
     return { error: null };
   }
 
   if (!data.url) {
     await clearPendingSignupRole();
-    return { error: new Error('Supabase did not return a GitHub sign-in URL.') };
+    return { error: new Error('Supabase did not return a Google sign-in URL.') };
   }
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== 'success') {
     await clearPendingSignupRole();
-    return { error: new Error('GitHub sign-in was cancelled.') };
+    return { error: new Error('Google sign-in was cancelled.') };
   }
 
   const callbackUrl = new URL(result.url);
   const code = callbackUrl.searchParams.get('code');
   if (!code) {
     await clearPendingSignupRole();
-    return { error: new Error('GitHub sign-in did not return an authorization code.') };
+    return { error: new Error('Google sign-in did not return an authorization code.') };
   }
 
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);

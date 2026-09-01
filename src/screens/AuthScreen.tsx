@@ -6,7 +6,7 @@ import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
 import { clearPendingSignupRole, setPendingSignupRole } from '../lib/profile';
-import { signInWithEmail, signInWithGithub, signUpWithEmail } from '../services/auth';
+import { signInWithEmail, signInWithGoogle, signUpWithEmail } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -19,7 +19,7 @@ export function AuthScreen({ navigation }: Props) {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGithubLoading, setIsGithubLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const navigateToRole = (selectedRole: 'customer' | 'freelancer') => {
     if (selectedRole === 'freelancer') {
@@ -73,25 +73,25 @@ export function AuthScreen({ navigation }: Props) {
     }
   };
 
-  const handleGithubSignIn = async () => {
+  const handleGoogleSignIn = async () => {
     setAuthError('');
-    setIsGithubLoading(true);
+    setIsGoogleLoading(true);
     try {
       const selectedRole = mode === 'login' ? loginRole : role;
       await setPendingSignupRole(mode === 'register' ? role : 'customer');
-      const { error } = await signInWithGithub();
+      const { error } = await signInWithGoogle();
       if (error) {
-        Alert.alert('GitHub sign-in unavailable', error.message);
+        Alert.alert('Google sign-in unavailable', error.message);
         return;
       }
 
       navigateToRole(mode === 'login' ? selectedRole : 'customer');
     } catch (error: unknown) {
       await clearPendingSignupRole();
-      const message = error instanceof Error ? error.message : 'Unexpected GitHub sign-in error.';
-      Alert.alert('GitHub sign-in unavailable', message);
+      const message = error instanceof Error ? error.message : 'Unexpected Google sign-in error.';
+      Alert.alert('Google sign-in unavailable', message);
     } finally {
-      setIsGithubLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -117,9 +117,6 @@ export function AuthScreen({ navigation }: Props) {
         secureTextEntry
         style={styles.input}
       />
-      {mode === 'register' && <TextInput placeholder="Full name" style={styles.input} />}
-      <TextInput placeholder="Email address" keyboardType="email-address" autoCapitalize="none" style={styles.input} />
-      <TextInput placeholder="Password" secureTextEntry style={styles.input} />
       {mode === 'register' && (
         <View style={styles.roleRow}>
           {(['customer', 'freelancer'] as const).map((item) => (
@@ -153,7 +150,7 @@ export function AuthScreen({ navigation }: Props) {
       )}
       <Pressable
         style={styles.primaryButton}
-        disabled={isSubmitting || isGithubLoading}
+        disabled={isSubmitting || isGoogleLoading}
         onPress={() => void handleEmailAuth()}
       >
         <Text style={styles.primaryButtonText}>
@@ -164,27 +161,15 @@ export function AuthScreen({ navigation }: Props) {
       <Text style={styles.orLabel}>OR</Text>
       <Pressable
         accessibilityRole="button"
-        disabled={!hasSupabaseConfig || isSubmitting || isGithubLoading}
-        style={[styles.githubButton, (!hasSupabaseConfig || isSubmitting || isGithubLoading) && styles.disabledButton]}
-        onPress={() => void handleGithubSignIn()}
+        disabled={!hasSupabaseConfig || isSubmitting || isGoogleLoading}
+        style={[styles.googleButton, (!hasSupabaseConfig || isSubmitting || isGoogleLoading) && styles.disabledButton]}
+        onPress={() => void handleGoogleSignIn()}
       >
-        <Text style={styles.githubButtonText}>{isGithubLoading ? 'Opening GitHub…' : 'Continue with GitHub'}</Text>
+        <Text style={styles.googleButtonText}>{isGoogleLoading ? 'Opening Google…' : 'Continue with Google'}</Text>
       </Pressable>
       {!hasSupabaseConfig && (
-        <Text style={styles.helperText}>Add Supabase values to .env to enable GitHub sign-in.</Text>
+        <Text style={styles.helperText}>Add Supabase values to .env to enable Google sign-in.</Text>
       )}
-      <Pressable
-        style={styles.primaryButton}
-        onPress={() => {
-          if (role === 'freelancer') {
-            navigation.replace('Freelancer', { role });
-            return;
-          }
-          navigation.replace('Customer', { role });
-        }}
-      >
-        <Text style={styles.primaryButtonText}>{mode === 'register' ? 'Create account' : 'Sign in'}</Text>
-      </Pressable>
       <Pressable onPress={() => setMode(mode === 'register' ? 'login' : 'register')}>
         <Text style={styles.link}>
           {mode === 'register' ? 'Already have an account? Sign in' : 'New here? Create an account'}
@@ -217,14 +202,14 @@ const styles = StyleSheet.create({
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 18, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   orLabel: { color: theme.colors.muted, fontSize: 12, fontWeight: '800', marginVertical: 18, textAlign: 'center' },
-  githubButton: {
+  googleButton: {
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.ink,
     borderRadius: 14,
     borderWidth: 1,
     padding: 16,
   },
-  githubButtonText: { color: theme.colors.ink, fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  googleButtonText: { color: theme.colors.ink, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   disabledButton: { opacity: 0.5 },
   helperText: { color: theme.colors.muted, fontSize: 12, marginTop: 8, textAlign: 'center' },
   errorText: { color: '#B42318', fontSize: 13, marginTop: 12, textAlign: 'center' },

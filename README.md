@@ -37,13 +37,13 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=
 
 Never commit `.env` or service-role keys. Apply all SQL files in `supabase/migrations` through the Supabase CLI or SQL editor before using real accounts.
 
-## GitHub sign-in setup
+## Google sign-in setup
 
-The auth screen includes a Supabase GitHub OAuth action when the public Supabase values are configured.
+The auth screen includes a Supabase Google OAuth action when the public Supabase values are configured.
 
-1. In Supabase, open **Authentication → Providers → GitHub**, enable it, and copy the provider callback URL.
-2. In GitHub Developer Settings, create or edit an OAuth App and set its authorization callback URL to the copied Supabase URL (`https://<project-ref>.supabase.co/auth/v1/callback`).
-3. Add the GitHub client ID and secret to the Supabase GitHub provider.
+1. In Supabase, open **Authentication → Providers → Google**, enable it, and copy the provider callback URL.
+2. In Google Cloud Console, create or select an OAuth client and add the copied Supabase URL (`https://<project-ref>.supabase.co/auth/v1/callback`) as an authorized redirect URI.
+3. Add the Google client ID and secret to the Supabase Google provider.
 4. In Supabase **Authentication → URL Configuration**, add the app redirect URL. For local web development, use the URL Expo prints when the app starts.
 
 The app uses the `lashonwheels://auth/callback` scheme for native OAuth sessions.
