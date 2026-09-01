@@ -1,3 +1,9 @@
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { RootStackParamList } from '../../App';
+import { theme } from '../constants/theme';
+import { hasSupabaseConfig } from '../lib/env';
+import { signOut } from '../services/auth';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
@@ -26,6 +32,7 @@ const copy = {
   },
 } as const;
 
+export function DashboardScreen({ navigation, route }: Props) {
 export function DashboardScreen({ route }: Props) {
   const content = copy[route.params?.role ?? 'customer'];
   return (
@@ -42,6 +49,18 @@ export function DashboardScreen({ route }: Props) {
           </View>
         ))}
       </View>
+      <Pressable
+        style={styles.signOutButton}
+        onPress={() => {
+          if (!hasSupabaseConfig) {
+            navigation.replace('Welcome');
+            return;
+          }
+          void signOut();
+        }}
+      >
+        <Text style={styles.signOutText}>Sign out</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -62,4 +81,6 @@ const styles = StyleSheet.create({
   cardNumber: { color: theme.colors.accent, fontSize: 12, fontWeight: '800' },
   cardTitle: { color: theme.colors.ink, fontSize: 18, fontWeight: '800', marginTop: 12 },
   cardBody: { color: theme.colors.muted, marginTop: 6 },
+  signOutButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 28, padding: 15 },
+  signOutText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
 });

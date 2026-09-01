@@ -3,6 +3,7 @@
     "name": "Lash On Wheels",
     "slug": "lash-on-wheels",
     "version": "1.0.0",
+    "scheme": "lashonwheels",
     "orientation": "portrait",
     "icon": "./assets/lash-on-wheels-logo.png",
     "userInterfaceStyle": "light",
@@ -20,6 +21,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": ["expo-web-browser"]
   }
 }

@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +9,8 @@ import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
+import { ensureProfile, type UserRole } from './src/lib/profile';
+import { supabase } from './src/lib/supabase';
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -33,6 +37,70 @@ function WelcomeScreen({ navigation }: { navigation: { navigate: (screen: 'Auth'
 }
 
 export default function App() {
+  const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase));
+  const [hasSession, setHasSession] = useState(false);
+  const [role, setRole] = useState<UserRole>('customer');
+
+  useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
+    let isMounted = true;
+    let authVersion = 0;
+    const updateAuthState = async (user: User | null) => {
+      const version = ++authVersion;
+      if (!user) {
+        if (!isMounted || version !== authVersion) {
+          return;
+        }
+        setHasSession(false);
+        setRole('customer');
+        setIsAuthLoading(false);
+        return;
+      }
+
+      setIsAuthLoading(true);
+      const { profile } = await ensureProfile(user);
+      if (!isMounted || version !== authVersion) {
+        return;
+      }
+      setHasSession(true);
+      setRole(profile?.role ?? 'customer');
+      setIsAuthLoading(false);
+    };
+
+    void supabase.auth.getSession().then(({ data }) => {
+      if (isMounted) {
+        void updateAuthState(data.session?.user ?? null);
+      }
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      void updateAuthState(session?.user ?? null);
+    });
+
+    return () => {
+      isMounted = false;
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
+  if (isAuthLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading…</Text>
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        key={hasSession ? 'authenticated' : 'anonymous'}
+        initialRouteName={
+          hasSession ? (role === 'freelancer' ? 'Freelancer' : role === 'admin' ? 'Admin' : 'Customer') : 'Welcome'
+        }
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -45,6 +113,9 @@ export default function App() {
       >
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Welcome back' }} />
+        <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
+        <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
+        <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
         <Stack.Screen name="Customer" component={DashboardScreen} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} />
         <Stack.Screen name="Admin" component={DashboardScreen} />
@@ -54,6 +125,8 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: { alignItems: 'center', backgroundColor: theme.colors.cream, flex: 1, justifyContent: 'center' },
+  loadingText: { color: theme.colors.muted, fontSize: 16 },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
   logo: { width: '100%', height: 190, marginBottom: 12 },
   tagline: { color: theme.colors.muted, fontSize: 17, textAlign: 'center', marginBottom: 28 },
