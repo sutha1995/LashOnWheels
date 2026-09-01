@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 export type UserRole = 'customer' | 'freelancer' | 'admin';
 export type SignupRole = Exclude<UserRole, 'admin'>;
 const pendingRoleKey = 'lash-on-wheels.pending-role';
+const pendingRoleLifetimeMs = 15 * 60 * 1000;
 
 export type Profile = {
   id: string;
@@ -32,7 +33,11 @@ export async function getProfile(userId: string) {
     return { profile: null, error: new Error('Supabase is not configured.') };
   }
 
-  const { data, error } = await supabase.from('profiles').select('id, full_name, role').eq('id', userId).single();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, role, requested_role')
+    .eq('id', userId)
+    .single();
   return { profile: data as Profile | null, error };
 }
 
@@ -40,13 +45,14 @@ export async function ensureProfile(user: User) {
   const { profile, error } = await getProfile(user.id);
   const isMissingProfile = error && 'code' in error && error.code === 'PGRST116';
   if (profile || !isMissingProfile) {
+    await clearPendingSignupRole();
     return { profile, error };
   }
 
   const metadataRole = user.user_metadata.role;
   const metadataRequestedRole: SignupRole = metadataRole === 'freelancer' ? 'freelancer' : 'customer';
-  const pendingRole = await AsyncStorage.getItem(pendingRoleKey);
-  const requestedRole: SignupRole = pendingRole === 'freelancer' ? 'freelancer' : metadataRequestedRole;
+  const pendingRole = await getPendingSignupRole();
+  const requestedRole = pendingRole ?? metadataRequestedRole;
   const fullName = typeof user.user_metadata.full_name === 'string' ? user.user_metadata.full_name : '';
   const result = await saveProfile(user, fullName, requestedRole);
   if (!result.error) {
@@ -56,5 +62,32 @@ export async function ensureProfile(user: User) {
 }
 
 export async function setPendingSignupRole(role: SignupRole) {
-  await AsyncStorage.setItem(pendingRoleKey, role);
+  await AsyncStorage.setItem(pendingRoleKey, JSON.stringify({ role, createdAt: Date.now() }));
+}
+
+export async function clearPendingSignupRole() {
+  await AsyncStorage.removeItem(pendingRoleKey);
+}
+
+async function getPendingSignupRole(): Promise<SignupRole | null> {
+  const pendingRoleValue = await AsyncStorage.getItem(pendingRoleKey);
+  if (!pendingRoleValue) {
+    return null;
+  }
+
+  try {
+    const pendingRole = JSON.parse(pendingRoleValue) as { createdAt?: unknown; role?: unknown };
+    if (
+      typeof pendingRole.createdAt !== 'number' ||
+      Date.now() - pendingRole.createdAt > pendingRoleLifetimeMs ||
+      (pendingRole.role !== 'customer' && pendingRole.role !== 'freelancer')
+    ) {
+      await clearPendingSignupRole();
+      return null;
+    }
+    return pendingRole.role;
+  } catch {
+    await clearPendingSignupRole();
+    return null;
+  }
 }
