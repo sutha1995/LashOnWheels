@@ -9,6 +9,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 export function AuthScreen({ navigation }: Props) {
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [role, setRole] = useState<'customer' | 'freelancer'>('customer');
+  const [loginRole, setLoginRole] = useState<'customer' | 'freelancer'>('customer');
 
   return (
     <View style={styles.container}>
@@ -32,14 +33,31 @@ export function AuthScreen({ navigation }: Props) {
           ))}
         </View>
       )}
+      {mode === 'login' && (
+        <View style={styles.roleRow}>
+          <Text style={styles.roleLabel}>Continue as</Text>
+          {(['customer', 'freelancer'] as const).map((item) => (
+            <Pressable
+              key={item}
+              style={[styles.roleButton, loginRole === item && styles.roleButtonActive]}
+              onPress={() => setLoginRole(item)}
+            >
+              <Text style={[styles.roleText, loginRole === item && styles.roleTextActive]}>
+                {item === 'customer' ? 'Customer' : 'Freelancer'}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
       <Pressable
         style={styles.primaryButton}
         onPress={() => {
-          if (role === 'freelancer') {
-            navigation.replace('Freelancer', { role });
+          const selectedRole = mode === 'login' ? loginRole : role;
+          if (selectedRole === 'freelancer') {
+            navigation.replace('Freelancer', { role: selectedRole });
             return;
           }
-          navigation.replace('Customer', { role });
+          navigation.replace('Customer', { role: selectedRole });
         }}
       >
         <Text style={styles.primaryButtonText}>{mode === 'register' ? 'Create account' : 'Sign in'}</Text>
@@ -68,6 +86,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   roleRow: { gap: 10, marginVertical: 8 },
+  roleLabel: { color: theme.colors.muted, fontSize: 13, fontWeight: '700', marginBottom: 2 },
   roleButton: { borderColor: theme.colors.border, borderRadius: 12, borderWidth: 1, padding: 15 },
   roleButtonActive: { backgroundColor: theme.colors.blush, borderColor: theme.colors.accent },
   roleText: { color: theme.colors.muted, fontWeight: '600', textAlign: 'center' },
