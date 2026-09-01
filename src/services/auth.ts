@@ -3,6 +3,8 @@ import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export async function signInWithGithub(): Promise<{ error: Error | null }> {
   if (!supabase) {
     return { error: new Error('Supabase is not configured.') };
@@ -22,8 +24,8 @@ export async function signInWithGithub(): Promise<{ error: Error | null }> {
   }
 
   if (Platform.OS === 'web') {
-    if (data.url) {
-      globalThis.location.assign(data.url);
+    if (!data.url) {
+      return { error: new Error('Supabase did not return a GitHub sign-in URL.') };
     }
     return { error: null };
   }

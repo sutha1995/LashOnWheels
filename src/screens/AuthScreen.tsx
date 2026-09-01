@@ -17,11 +17,24 @@ export function AuthScreen({ navigation }: Props) {
 
   const handleGithubSignIn = async () => {
     setIsGithubLoading(true);
-    const { error } = await signInWithGithub();
-    setIsGithubLoading(false);
+    try {
+      const { error } = await signInWithGithub();
+      if (error) {
+        Alert.alert('GitHub sign-in unavailable', error.message);
+        return;
+      }
 
-    if (error) {
-      Alert.alert('GitHub sign-in unavailable', error.message);
+      const selectedRole = mode === 'login' ? loginRole : role;
+      if (selectedRole === 'freelancer') {
+        navigation.replace('Freelancer', { role: selectedRole });
+        return;
+      }
+      navigation.replace('Customer', { role: 'customer' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unexpected GitHub sign-in error.';
+      Alert.alert('GitHub sign-in unavailable', message);
+    } finally {
+      setIsGithubLoading(false);
     }
   };
 
