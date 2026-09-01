@@ -32,3 +32,14 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
 Never commit `.env` or service-role keys. Database schema, authentication, RLS, booking, payment, and storage features will be added in later PRD phases.
+
+## GitHub sign-in setup
+
+The auth screen includes a Supabase GitHub OAuth action when the public Supabase values are configured.
+
+1. In Supabase, open **Authentication → Providers → GitHub**, enable it, and copy the provider callback URL.
+2. In GitHub Developer Settings, create or edit an OAuth App and set its authorization callback URL to the copied Supabase URL (`https://<project-ref>.supabase.co/auth/v1/callback`).
+3. Add the GitHub client ID and secret to the Supabase GitHub provider.
+4. In Supabase **Authentication → URL Configuration**, add the app redirect URL. For local web development, use the URL Expo prints when the app starts.
+
+The app uses the `lashonwheels://auth/callback` scheme for native OAuth sessions.
