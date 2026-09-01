@@ -2,8 +2,49 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { saveProfile, type UserRole } from '../lib/profile';
 
 WebBrowser.maybeCompleteAuthSession();
+
+export async function signInWithEmail(email: string, password: string) {
+  if (!supabase) {
+    return { user: null, needsConfirmation: false, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  return { user: data.user, needsConfirmation: false, error };
+}
+
+export async function signUpWithEmail(
+  email: string,
+  password: string,
+  fullName: string,
+  role: Exclude<UserRole, 'admin'>,
+) {
+  if (!supabase) {
+    return { user: null, needsConfirmation: false, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email: email.trim(),
+    password,
+    options: { data: { full_name: fullName.trim(), role } },
+  });
+
+  if (error || !data.user || !data.session) {
+    return { user: data.user, needsConfirmation: Boolean(data.user && !data.session), error };
+  }
+
+  const { error: profileError } = await saveProfile(data.user, fullName, role);
+  return { user: data.user, needsConfirmation: false, error: profileError };
+}
+
+export async function signOut() {
+  if (supabase) {
+    return supabase.auth.signOut();
+  }
+  return { error: null };
+}
 
 export async function signInWithGithub(): Promise<{ error: Error | null }> {
   if (!supabase) {

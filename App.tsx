@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +9,7 @@ import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
+import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
 
 export type RootStackParamList = {
@@ -37,6 +39,7 @@ function WelcomeScreen({ navigation }: { navigation: { navigate: (screen: 'Auth'
 export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase));
   const [hasSession, setHasSession] = useState(false);
+  const [role, setRole] = useState<UserRole>('customer');
 
   useEffect(() => {
     if (!supabase) {
@@ -44,16 +47,28 @@ export default function App() {
     }
 
     let isMounted = true;
+    const updateAuthState = async (user: User | null) => {
+      if (!user) {
+        setHasSession(false);
+        setRole('customer');
+        setIsAuthLoading(false);
+        return;
+      }
+
+      const { profile } = await ensureProfile(user);
+      setHasSession(true);
+      setRole(profile?.role ?? 'customer');
+      setIsAuthLoading(false);
+    };
+
     void supabase.auth.getSession().then(({ data }) => {
       if (isMounted) {
-        setHasSession(Boolean(data.session));
-        setIsAuthLoading(false);
+        void updateAuthState(data.session?.user ?? null);
       }
     });
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setHasSession(Boolean(session));
-      setIsAuthLoading(false);
+      void updateAuthState(session?.user ?? null);
     });
 
     return () => {
@@ -74,7 +89,7 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator
         key={hasSession ? 'authenticated' : 'anonymous'}
-        initialRouteName={hasSession ? 'Customer' : 'Welcome'}
+        initialRouteName={hasSession ? (role === 'freelancer' ? 'Freelancer' : 'Customer') : 'Welcome'}
         screenOptions={{
           headerTintColor: theme.colors.ink,
           headerStyle: { backgroundColor: theme.colors.blush },
