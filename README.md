@@ -4,12 +4,14 @@ Mobile-first foundation for the Lash On Wheels on-demand beauty marketplace.
 
 ## Current scope
 
-Phase 0 establishes the Expo SDK 57 + TypeScript app shell:
+Phase 1 adds the first Supabase-backed account flow:
 
 - Lash On Wheels branding and supplied logo.
 - Customer, freelancer, and admin navigation entry points.
 - Registration role selection with demo dashboard routing.
 - Supabase client integration that stays in demo mode until public environment values are configured.
+- Email/password registration and sign-in with customer/freelancer profile roles.
+- Session restoration, authenticated routing, and a versioned `profiles` migration with RLS.
 - ESLint, Prettier, and strict TypeScript checks.
 
 ## Run locally
@@ -31,7 +33,7 @@ EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-Never commit `.env` or service-role keys. Database schema, authentication, RLS, booking, payment, and storage features will be added in later PRD phases.
+Never commit `.env` or service-role keys. Apply the SQL files in `supabase/migrations` through the Supabase CLI or SQL editor before using real accounts.
 
 ## GitHub sign-in setup
 

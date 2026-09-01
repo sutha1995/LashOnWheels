@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
-import { signInWithGithub } from '../services/auth';
+import { signInWithEmail, signInWithGithub, signUpWithEmail } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -13,9 +13,65 @@ export function AuthScreen({ navigation }: Props) {
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [role, setRole] = useState<'customer' | 'freelancer'>('customer');
   const [loginRole, setLoginRole] = useState<'customer' | 'freelancer'>('customer');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGithubLoading, setIsGithubLoading] = useState(false);
 
+  const navigateToRole = (selectedRole: 'customer' | 'freelancer') => {
+    if (selectedRole === 'freelancer') {
+      navigation.replace('Freelancer', { role: selectedRole });
+      return;
+    }
+    navigation.replace('Customer', { role: selectedRole });
+  };
+
+  const handleEmailAuth = async () => {
+    setAuthError('');
+    const selectedRole = mode === 'login' ? loginRole : role;
+    if (!hasSupabaseConfig) {
+      navigateToRole(selectedRole);
+      return;
+    }
+
+    if (!email.trim() || password.length < 6 || (mode === 'register' && !fullName.trim())) {
+      setAuthError(
+        mode === 'register'
+          ? 'Enter your name, email, and a password of at least 6 characters.'
+          : 'Enter your email and password.',
+      );
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const result =
+        mode === 'login'
+          ? await signInWithEmail(email, password)
+          : await signUpWithEmail(email, password, fullName, role);
+
+      if (result.error) {
+        setAuthError(result.error.message);
+        return;
+      }
+
+      if (mode === 'register' && result.needsConfirmation) {
+        setAuthError('Check your email to confirm your account before signing in.');
+        return;
+      }
+
+      navigateToRole(selectedRole);
+    } catch (error: unknown) {
+      setAuthError(error instanceof Error ? error.message : 'Unexpected authentication error.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleGithubSignIn = async () => {
+    setAuthError('');
     setIsGithubLoading(true);
     try {
       const { error } = await signInWithGithub();
@@ -25,11 +81,7 @@ export function AuthScreen({ navigation }: Props) {
       }
 
       const selectedRole = mode === 'login' ? loginRole : role;
-      if (selectedRole === 'freelancer') {
-        navigation.replace('Freelancer', { role: selectedRole });
-        return;
-      }
-      navigation.replace('Customer', { role: 'customer' });
+      navigateToRole(selectedRole);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unexpected GitHub sign-in error.';
       Alert.alert('GitHub sign-in unavailable', message);
@@ -42,9 +94,24 @@ export function AuthScreen({ navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>{mode === 'register' ? 'Create your account' : 'Sign in to continue'}</Text>
       <Text style={styles.subtitle}>Book beautiful lash services at home.</Text>
-      {mode === 'register' && <TextInput placeholder="Full name" style={styles.input} />}
-      <TextInput placeholder="Email address" keyboardType="email-address" autoCapitalize="none" style={styles.input} />
-      <TextInput placeholder="Password" secureTextEntry style={styles.input} />
+      {mode === 'register' && (
+        <TextInput placeholder="Full name" value={fullName} onChangeText={setFullName} style={styles.input} />
+      )}
+      <TextInput
+        placeholder="Email address"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        style={styles.input}
+      />
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
       {mode === 'register' && (
         <View style={styles.roleRow}>
           {(['customer', 'freelancer'] as const).map((item) => (
@@ -78,23 +145,20 @@ export function AuthScreen({ navigation }: Props) {
       )}
       <Pressable
         style={styles.primaryButton}
-        onPress={() => {
-          const selectedRole = mode === 'login' ? loginRole : role;
-          if (selectedRole === 'freelancer') {
-            navigation.replace('Freelancer', { role: selectedRole });
-            return;
-          }
-          navigation.replace('Customer', { role: selectedRole });
-        }}
+        disabled={isSubmitting || isGithubLoading}
+        onPress={() => void handleEmailAuth()}
       >
-        <Text style={styles.primaryButtonText}>{mode === 'register' ? 'Create account' : 'Sign in'}</Text>
+        <Text style={styles.primaryButtonText}>
+          {isSubmitting ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Sign in'}
+        </Text>
       </Pressable>
+      {!!authError && <Text style={styles.errorText}>{authError}</Text>}
       <Text style={styles.orLabel}>OR</Text>
       <Pressable
         accessibilityRole="button"
-        disabled={!hasSupabaseConfig || isGithubLoading}
-        style={[styles.githubButton, (!hasSupabaseConfig || isGithubLoading) && styles.disabledButton]}
-        onPress={handleGithubSignIn}
+        disabled={!hasSupabaseConfig || isSubmitting || isGithubLoading}
+        style={[styles.githubButton, (!hasSupabaseConfig || isSubmitting || isGithubLoading) && styles.disabledButton]}
+        onPress={() => void handleGithubSignIn()}
       >
         <Text style={styles.githubButtonText}>{isGithubLoading ? 'Opening GitHub…' : 'Continue with GitHub'}</Text>
       </Pressable>
@@ -143,5 +207,6 @@ const styles = StyleSheet.create({
   githubButtonText: { color: theme.colors.ink, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   disabledButton: { opacity: 0.5 },
   helperText: { color: theme.colors.muted, fontSize: 12, marginTop: 8, textAlign: 'center' },
+  errorText: { color: '#B42318', fontSize: 13, marginTop: 12, textAlign: 'center' },
   link: { color: theme.colors.accent, fontWeight: '700', marginTop: 22, textAlign: 'center' },
 });
