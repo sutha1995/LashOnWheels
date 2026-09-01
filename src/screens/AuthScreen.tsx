@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { Alert } from 'react-native';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
+import { hasSupabaseConfig } from '../lib/env';
+import { signInWithGithub } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -10,6 +13,17 @@ export function AuthScreen({ navigation }: Props) {
   const [mode, setMode] = useState<'login' | 'register'>('register');
   const [role, setRole] = useState<'customer' | 'freelancer'>('customer');
   const [loginRole, setLoginRole] = useState<'customer' | 'freelancer'>('customer');
+  const [isGithubLoading, setIsGithubLoading] = useState(false);
+
+  const handleGithubSignIn = async () => {
+    setIsGithubLoading(true);
+    const { error } = await signInWithGithub();
+    setIsGithubLoading(false);
+
+    if (error) {
+      Alert.alert('GitHub sign-in unavailable', error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -62,6 +76,18 @@ export function AuthScreen({ navigation }: Props) {
       >
         <Text style={styles.primaryButtonText}>{mode === 'register' ? 'Create account' : 'Sign in'}</Text>
       </Pressable>
+      <Text style={styles.orLabel}>OR</Text>
+      <Pressable
+        accessibilityRole="button"
+        disabled={!hasSupabaseConfig || isGithubLoading}
+        style={[styles.githubButton, (!hasSupabaseConfig || isGithubLoading) && styles.disabledButton]}
+        onPress={handleGithubSignIn}
+      >
+        <Text style={styles.githubButtonText}>{isGithubLoading ? 'Opening GitHub…' : 'Continue with GitHub'}</Text>
+      </Pressable>
+      {!hasSupabaseConfig && (
+        <Text style={styles.helperText}>Add Supabase values to .env to enable GitHub sign-in.</Text>
+      )}
       <Pressable onPress={() => setMode(mode === 'register' ? 'login' : 'register')}>
         <Text style={styles.link}>
           {mode === 'register' ? 'Already have an account? Sign in' : 'New here? Create an account'}
@@ -93,5 +119,16 @@ const styles = StyleSheet.create({
   roleTextActive: { color: theme.colors.ink },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 18, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  orLabel: { color: theme.colors.muted, fontSize: 12, fontWeight: '800', marginVertical: 18, textAlign: 'center' },
+  githubButton: {
+    backgroundColor: theme.colors.white,
+    borderColor: theme.colors.ink,
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+  },
+  githubButtonText: { color: theme.colors.ink, fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  disabledButton: { opacity: 0.5 },
+  helperText: { color: theme.colors.muted, fontSize: 12, marginTop: 8, textAlign: 'center' },
   link: { color: theme.colors.accent, fontWeight: '700', marginTop: 22, textAlign: 'center' },
 });
