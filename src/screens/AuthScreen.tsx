@@ -117,6 +117,9 @@ export function AuthScreen({ navigation }: Props) {
         secureTextEntry
         style={styles.input}
       />
+      {mode === 'register' && <TextInput placeholder="Full name" style={styles.input} />}
+      <TextInput placeholder="Email address" keyboardType="email-address" autoCapitalize="none" style={styles.input} />
+      <TextInput placeholder="Password" secureTextEntry style={styles.input} />
       {mode === 'register' && (
         <View style={styles.roleRow}>
           {(['customer', 'freelancer'] as const).map((item) => (
@@ -170,6 +173,18 @@ export function AuthScreen({ navigation }: Props) {
       {!hasSupabaseConfig && (
         <Text style={styles.helperText}>Add Supabase values to .env to enable GitHub sign-in.</Text>
       )}
+      <Pressable
+        style={styles.primaryButton}
+        onPress={() => {
+          if (role === 'freelancer') {
+            navigation.replace('Freelancer', { role });
+            return;
+          }
+          navigation.replace('Customer', { role });
+        }}
+      >
+        <Text style={styles.primaryButtonText}>{mode === 'register' ? 'Create account' : 'Sign in'}</Text>
+      </Pressable>
       <Pressable onPress={() => setMode(mode === 'register' ? 'login' : 'register')}>
         <Text style={styles.link}>
           {mode === 'register' ? 'Already have an account? Sign in' : 'New here? Create an account'}

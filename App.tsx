@@ -101,6 +101,10 @@ export default function App() {
         initialRouteName={
           hasSession ? (role === 'freelancer' ? 'Freelancer' : role === 'admin' ? 'Admin' : 'Customer') : 'Welcome'
         }
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName="Welcome"
         screenOptions={{
           headerTintColor: theme.colors.ink,
           headerStyle: { backgroundColor: theme.colors.blush },
@@ -112,6 +116,9 @@ export default function App() {
         <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
+        <Stack.Screen name="Customer" component={DashboardScreen} />
+        <Stack.Screen name="Freelancer" component={DashboardScreen} />
+        <Stack.Screen name="Admin" component={DashboardScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
