@@ -59,7 +59,7 @@ export async function ensureProfile(user: User) {
   const fullName = typeof user.user_metadata.full_name === 'string' ? user.user_metadata.full_name : '';
   const result = await saveProfile(user, fullName, requestedRole);
   if (!result.error) {
-    await AsyncStorage.removeItem(pendingRoleKey);
+    await clearPendingSignupRole();
   }
   return result;
 }
