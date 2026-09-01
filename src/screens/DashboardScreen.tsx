@@ -4,10 +4,6 @@ import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
 import { signOut } from '../services/auth';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../../App';
-import { theme } from '../constants/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Customer' | 'Freelancer' | 'Admin'>;
 
@@ -33,7 +29,6 @@ const copy = {
 } as const;
 
 export function DashboardScreen({ navigation, route }: Props) {
-export function DashboardScreen({ route }: Props) {
   const content = copy[route.params?.role ?? 'customer'];
   return (
     <ScrollView contentContainerStyle={styles.container}>

@@ -44,8 +44,11 @@ export async function getProfile(userId: string) {
 export async function ensureProfile(user: User) {
   const { profile, error } = await getProfile(user.id);
   const isMissingProfile = error && 'code' in error && error.code === 'PGRST116';
-  if (profile || !isMissingProfile) {
+  if (profile) {
     await clearPendingSignupRole();
+    return { profile, error };
+  }
+  if (!isMissingProfile) {
     return { profile, error };
   }
 
@@ -56,7 +59,7 @@ export async function ensureProfile(user: User) {
   const fullName = typeof user.user_metadata.full_name === 'string' ? user.user_metadata.full_name : '';
   const result = await saveProfile(user, fullName, requestedRole);
   if (!result.error) {
-    await AsyncStorage.removeItem(pendingRoleKey);
+    await clearPendingSignupRole();
   }
   return result;
 }
@@ -66,7 +69,11 @@ export async function setPendingSignupRole(role: SignupRole) {
 }
 
 export async function clearPendingSignupRole() {
-  await AsyncStorage.removeItem(pendingRoleKey);
+  try {
+    await AsyncStorage.removeItem(pendingRoleKey);
+  } catch {
+    return;
+  }
 }
 
 async function getPendingSignupRole(): Promise<SignupRole | null> {
@@ -79,6 +86,7 @@ async function getPendingSignupRole(): Promise<SignupRole | null> {
     const pendingRole = JSON.parse(pendingRoleValue) as { createdAt?: unknown; role?: unknown };
     if (
       typeof pendingRole.createdAt !== 'number' ||
+      pendingRole.createdAt > Date.now() ||
       Date.now() - pendingRole.createdAt > pendingRoleLifetimeMs ||
       (pendingRole.role !== 'customer' && pendingRole.role !== 'freelancer')
     ) {
