@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
-import { setPendingSignupRole } from '../lib/profile';
+import { clearPendingSignupRole, setPendingSignupRole } from '../lib/profile';
 import { signInWithEmail, signInWithGithub, signUpWithEmail } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
@@ -31,6 +31,7 @@ export function AuthScreen({ navigation }: Props) {
 
   const handleEmailAuth = async () => {
     setAuthError('');
+    await clearPendingSignupRole();
     const selectedRole = mode === 'login' ? loginRole : role;
     if (!hasSupabaseConfig) {
       navigateToRole(selectedRole);
@@ -65,6 +66,7 @@ export function AuthScreen({ navigation }: Props) {
 
       navigateToRole(selectedRole);
     } catch (error: unknown) {
+      await clearPendingSignupRole();
       setAuthError(error instanceof Error ? error.message : 'Unexpected authentication error.');
     } finally {
       setIsSubmitting(false);
@@ -85,6 +87,7 @@ export function AuthScreen({ navigation }: Props) {
 
       navigateToRole(mode === 'login' ? selectedRole : 'customer');
     } catch (error: unknown) {
+      await clearPendingSignupRole();
       const message = error instanceof Error ? error.message : 'Unexpected GitHub sign-in error.';
       Alert.alert('GitHub sign-in unavailable', message);
     } finally {

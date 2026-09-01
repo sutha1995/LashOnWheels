@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
-import type { SignupRole } from '../lib/profile';
+import { clearPendingSignupRole, type SignupRole } from '../lib/profile';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -55,31 +55,39 @@ export async function signInWithGithub(): Promise<{ error: Error | null }> {
   });
 
   if (error) {
+    await clearPendingSignupRole();
     return { error };
   }
 
   if (Platform.OS === 'web') {
     if (!data.url) {
+      await clearPendingSignupRole();
       return { error: new Error('Supabase did not return a GitHub sign-in URL.') };
     }
     return { error: null };
   }
 
   if (!data.url) {
+    await clearPendingSignupRole();
     return { error: new Error('Supabase did not return a GitHub sign-in URL.') };
   }
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
   if (result.type !== 'success') {
+    await clearPendingSignupRole();
     return { error: new Error('GitHub sign-in was cancelled.') };
   }
 
   const callbackUrl = new URL(result.url);
   const code = callbackUrl.searchParams.get('code');
   if (!code) {
+    await clearPendingSignupRole();
     return { error: new Error('GitHub sign-in did not return an authorization code.') };
   }
 
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+  if (exchangeError) {
+    await clearPendingSignupRole();
+  }
   return { error: exchangeError };
 }
