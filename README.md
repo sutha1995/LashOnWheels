@@ -12,6 +12,7 @@ Phase 1 adds the first Supabase-backed account flow:
 - Supabase client integration that stays in demo mode until public environment values are configured.
 - Email/password registration and sign-in with customer/freelancer profile roles.
 - Session restoration, authenticated routing, and a versioned `profiles` migration with RLS.
+- Freelancer sign-up requests are recorded separately from the access role until onboarding approval.
 - ESLint, Prettier, and strict TypeScript checks.
 
 ## Run locally
@@ -33,7 +34,7 @@ EXPO_PUBLIC_SUPABASE_URL=
 EXPO_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-Never commit `.env` or service-role keys. Apply the SQL files in `supabase/migrations` through the Supabase CLI or SQL editor before using real accounts.
+Never commit `.env` or service-role keys. Apply all SQL files in `supabase/migrations` through the Supabase CLI or SQL editor before using real accounts.
 
 ## GitHub sign-in setup
 

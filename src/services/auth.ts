@@ -2,7 +2,7 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
-import { saveProfile, type UserRole } from '../lib/profile';
+import type { SignupRole } from '../lib/profile';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -15,12 +15,7 @@ export async function signInWithEmail(email: string, password: string) {
   return { user: data.user, needsConfirmation: false, error };
 }
 
-export async function signUpWithEmail(
-  email: string,
-  password: string,
-  fullName: string,
-  role: Exclude<UserRole, 'admin'>,
-) {
+export async function signUpWithEmail(email: string, password: string, fullName: string, role: SignupRole) {
   if (!supabase) {
     return { user: null, needsConfirmation: false, error: new Error('Supabase is not configured.') };
   }
@@ -35,8 +30,7 @@ export async function signUpWithEmail(
     return { user: data.user, needsConfirmation: Boolean(data.user && !data.session), error };
   }
 
-  const { error: profileError } = await saveProfile(data.user, fullName, role);
-  return { user: data.user, needsConfirmation: false, error: profileError };
+  return { user: data.user, needsConfirmation: false, error: null };
 }
 
 export async function signOut() {
