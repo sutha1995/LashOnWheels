@@ -47,15 +47,24 @@ export default function App() {
     }
 
     let isMounted = true;
+    let authVersion = 0;
     const updateAuthState = async (user: User | null) => {
+      const version = ++authVersion;
       if (!user) {
+        if (!isMounted || version !== authVersion) {
+          return;
+        }
         setHasSession(false);
         setRole('customer');
         setIsAuthLoading(false);
         return;
       }
 
+      setIsAuthLoading(true);
       const { profile } = await ensureProfile(user);
+      if (!isMounted || version !== authVersion) {
+        return;
+      }
       setHasSession(true);
       setRole(profile?.role ?? 'customer');
       setIsAuthLoading(false);
@@ -89,7 +98,9 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator
         key={hasSession ? 'authenticated' : 'anonymous'}
-        initialRouteName={hasSession ? (role === 'freelancer' ? 'Freelancer' : 'Customer') : 'Welcome'}
+        initialRouteName={
+          hasSession ? (role === 'freelancer' ? 'Freelancer' : role === 'admin' ? 'Admin' : 'Customer') : 'Welcome'
+        }
         screenOptions={{
           headerTintColor: theme.colors.ink,
           headerStyle: { backgroundColor: theme.colors.blush },
@@ -98,9 +109,9 @@ export default function App() {
       >
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Welcome back' }} />
-        <Stack.Screen name="Customer" component={DashboardScreen} />
-        <Stack.Screen name="Freelancer" component={DashboardScreen} />
-        <Stack.Screen name="Admin" component={DashboardScreen} />
+        <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
+        <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
+        <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

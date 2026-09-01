@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
+import { setPendingSignupRole } from '../lib/profile';
 import { signInWithEmail, signInWithGithub, signUpWithEmail } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
@@ -74,14 +75,15 @@ export function AuthScreen({ navigation }: Props) {
     setAuthError('');
     setIsGithubLoading(true);
     try {
+      const selectedRole = mode === 'login' ? loginRole : role;
+      await setPendingSignupRole(mode === 'register' ? role : 'customer');
       const { error } = await signInWithGithub();
       if (error) {
         Alert.alert('GitHub sign-in unavailable', error.message);
         return;
       }
 
-      const selectedRole = mode === 'login' ? loginRole : role;
-      navigateToRole(selectedRole);
+      navigateToRole(mode === 'login' ? selectedRole : 'customer');
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unexpected GitHub sign-in error.';
       Alert.alert('GitHub sign-in unavailable', message);
