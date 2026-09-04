@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
@@ -96,7 +96,7 @@ export function AuthScreen({ navigation }: Props) {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>{mode === 'register' ? 'Create your account' : 'Sign in to continue'}</Text>
       <Text style={styles.subtitle}>Book beautiful lash services at home.</Text>
       {mode === 'register' && (
@@ -175,12 +175,13 @@ export function AuthScreen({ navigation }: Props) {
           {mode === 'register' ? 'Already have an account? Sign in' : 'New here? Create an account'}
         </Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24 },
+  scrollView: { flex: 1 },
+  container: { padding: 24, paddingBottom: 40 },
   title: { color: theme.colors.ink, fontSize: 28, fontWeight: '800', marginTop: 24 },
   subtitle: { color: theme.colors.muted, fontSize: 16, marginTop: 8, marginBottom: 28 },
   input: {
