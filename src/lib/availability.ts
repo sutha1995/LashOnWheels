@@ -8,6 +8,13 @@ export type FreelancerAvailability = {
   end_time: string;
 };
 
+export type FreelancerAvailabilityValues = {
+  day_of_week: number;
+  is_available: boolean;
+  start_time: string;
+  end_time: string;
+};
+
 export async function getFreelancerAvailability(userId: string) {
   if (!supabase) {
     return { availability: [], error: new Error('Supabase is not configured.') };
@@ -22,11 +29,7 @@ export async function getFreelancerAvailability(userId: string) {
   return { availability: data as FreelancerAvailability[], error };
 }
 
-export async function saveFreelancerAvailability(
-  userId: string,
-  dayOfWeek: number,
-  values: { is_available: boolean; start_time: string; end_time: string },
-) {
+export async function saveFreelancerAvailability(userId: string, values: FreelancerAvailabilityValues[]) {
   if (!supabase) {
     return { availability: null, error: new Error('Supabase is not configured.') };
   }
@@ -34,15 +37,10 @@ export async function saveFreelancerAvailability(
   const { data, error } = await supabase
     .from('freelancer_availability')
     .upsert(
-      {
-        freelancer_id: userId,
-        day_of_week: dayOfWeek,
-        ...values,
-      },
+      values.map((value) => ({ freelancer_id: userId, ...value })),
       { onConflict: 'freelancer_id,day_of_week' },
     )
-    .select('id, day_of_week, is_available, start_time, end_time')
-    .single();
+    .select('id, day_of_week, is_available, start_time, end_time');
 
-  return { availability: data as FreelancerAvailability | null, error };
+  return { availability: data as FreelancerAvailability[] | null, error };
 }
