@@ -49,16 +49,24 @@ function isValidTime(value: string) {
 export function FreelancerAvailabilityScreen({ navigation }: Props) {
   const [drafts, setDrafts] = useState<Record<number, AvailabilityDraft>>(createDefaultDrafts);
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    setIsLoaded(false);
+    setLoadError('');
+
     if (!supabase) {
       setIsLoading(false);
+      setIsLoaded(true);
       return;
     }
 
-    let isMounted = true;
+    setIsLoading(true);
     void supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
         navigation.replace('Welcome');
@@ -70,7 +78,7 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
         return;
       }
       if (profileResult.error) {
-        setError(profileResult.error.message);
+        setLoadError(profileResult.error.message);
         setIsLoading(false);
         return;
       }
@@ -84,9 +92,10 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
         return;
       }
       if (result.error) {
-        setError(result.error.message);
+        setLoadError(result.error.message);
       } else {
         setDrafts(toDrafts(result.availability));
+        setIsLoaded(true);
       }
       setIsLoading(false);
     });
@@ -94,7 +103,7 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [navigation]);
+  }, [loadAttempt, navigation]);
 
   const updateDraft = (dayOfWeek: number, field: keyof AvailabilityDraft, value: boolean | string) => {
     setDrafts((current) => ({
@@ -107,15 +116,12 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
     setError('');
     for (const day of days) {
       const draft = drafts[day.value];
-      if (!draft.isAvailable) {
-        continue;
-      }
       if (!isValidTime(draft.startTime) || !isValidTime(draft.endTime) || draft.endTime <= draft.startTime) {
         setError(`${day.label}: enter valid times in HH:MM format with the end time after the start time.`);
         return;
       }
     }
-    if (!supabase) {
+    if (!supabase || !isLoaded) {
       navigation.goBack();
       return;
     }
@@ -128,20 +134,21 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
       return;
     }
 
-    const results = await Promise.all(
+    const result = await saveFreelancerAvailability(
+      data.user.id,
       days.map((day) => {
         const draft = drafts[day.value];
-        return saveFreelancerAvailability(data.user.id, day.value, {
+        return {
+          day_of_week: day.value,
           is_available: draft.isAvailable,
           start_time: draft.startTime,
           end_time: draft.endTime,
-        });
+        };
       }),
     );
     setIsSaving(false);
-    const failedResult = results.find((result) => result.error);
-    if (failedResult?.error) {
-      setError(failedResult.error.message);
+    if (result.error) {
+      setError(result.error.message);
       return;
     }
     navigation.goBack();
@@ -151,6 +158,17 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
     return (
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading your availability…</Text>
+      </View>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>{loadError}</Text>
+        <Pressable style={styles.primaryButton} onPress={() => setLoadAttempt((current) => current + 1)}>
+          <Text style={styles.primaryButtonText}>Retry loading availability</Text>
+        </Pressable>
       </View>
     );
   }
