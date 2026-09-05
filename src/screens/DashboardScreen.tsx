@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
+import { getFreelancerProfile } from '../lib/profile';
+import { supabase } from '../lib/supabase';
 import { signOut } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Customer' | 'Freelancer' | 'Admin'>;
@@ -29,7 +32,36 @@ const copy = {
 } as const;
 
 export function DashboardScreen({ navigation, route }: Props) {
+  const [serviceAccessError, setServiceAccessError] = useState('');
   const content = copy[route.params?.role ?? 'customer'];
+
+  const openFreelancerServices = async () => {
+    setServiceAccessError('');
+    if (!supabase) {
+      navigation.navigate('FreelancerServices');
+      return;
+    }
+
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      setServiceAccessError('Your session has expired. Please sign in again.');
+      return;
+    }
+
+    const result = await getFreelancerProfile(data.user.id);
+    if (result.error) {
+      setServiceAccessError(result.error.message);
+      return;
+    }
+    if (!result.profile) {
+      setServiceAccessError('Complete your freelancer profile before adding services.');
+      navigation.navigate('FreelancerOnboarding');
+      return;
+    }
+
+    navigation.navigate('FreelancerServices');
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.eyebrow}>{content.eyebrow}</Text>
@@ -53,7 +85,8 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('FreelancerOnboarding')}>
             <Text style={styles.primaryButtonText}>Complete freelancer profile</Text>
           </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerServices')}>
+          {!!serviceAccessError && <Text style={styles.errorText}>{serviceAccessError}</Text>}
+          <Pressable style={styles.secondaryButton} onPress={() => void openFreelancerServices()}>
             <Text style={styles.secondaryButtonText}>Manage services and pricing</Text>
           </Pressable>
         </>
@@ -96,4 +129,5 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
   secondaryButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 12, padding: 15 },
   secondaryButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
+  errorText: { color: '#B42318', fontSize: 13, marginTop: 12, textAlign: 'center' },
 });

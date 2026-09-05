@@ -11,6 +11,7 @@ import {
   type FreelancerService,
   type Service,
 } from '../lib/serviceCatalog';
+import { getFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FreelancerServices'>;
@@ -39,6 +40,19 @@ export function FreelancerServicesScreen({ navigation }: Props) {
     void supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
         navigation.replace('Welcome');
+        return;
+      }
+
+      const profileResult = await getFreelancerProfile(data.user.id);
+      if (profileResult.error) {
+        if (isMounted) {
+          setError(profileResult.error.message);
+          setIsLoading(false);
+        }
+        return;
+      }
+      if (!profileResult.profile) {
+        navigation.replace('FreelancerOnboarding');
         return;
       }
 
@@ -74,9 +88,11 @@ export function FreelancerServicesScreen({ navigation }: Props) {
     );
   };
 
-  const updateDraft = (serviceId: string, field: keyof Draft, value: string) => {
-    const current = drafts[serviceId] ?? { description: '', duration: '', price: '' };
-    setDrafts({ ...drafts, [serviceId]: { ...current, [field]: value } });
+  const updateDraft = (service: Service, field: keyof Draft, value: string) => {
+    setDrafts((currentDrafts) => {
+      const current = currentDrafts[service.id] ?? getDraft(service);
+      return { ...currentDrafts, [service.id]: { ...current, [field]: value } };
+    });
   };
 
   const handleSave = async (service: Service) => {
@@ -166,21 +182,21 @@ export function FreelancerServicesScreen({ navigation }: Props) {
             <TextInput
               placeholder="Your price in RM"
               value={draft.price}
-              onChangeText={(value) => updateDraft(service.id, 'price', value)}
+              onChangeText={(value) => updateDraft(service, 'price', value)}
               keyboardType="decimal-pad"
               style={styles.input}
             />
             <TextInput
               placeholder="Duration in minutes"
               value={draft.duration}
-              onChangeText={(value) => updateDraft(service.id, 'duration', value)}
+              onChangeText={(value) => updateDraft(service, 'duration', value)}
               keyboardType="numeric"
               style={styles.input}
             />
             <TextInput
               placeholder="Optional service description"
               value={draft.description}
-              onChangeText={(value) => updateDraft(service.id, 'description', value)}
+              onChangeText={(value) => updateDraft(service, 'description', value)}
               multiline
               style={[styles.input, styles.multilineInput]}
             />
