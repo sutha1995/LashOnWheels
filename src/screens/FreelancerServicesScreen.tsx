@@ -126,8 +126,8 @@ export function FreelancerServicesScreen({ navigation, route }: Props) {
     const draft = getDraft(service);
     const duration = Number(draft.duration);
     const price = Number(draft.price);
-    if (!Number.isInteger(duration) || duration <= 0 || duration > 1440) {
-      setError(`${service.name}: duration must be a whole number from 1 to 1,440 minutes.`);
+    if (!Number.isInteger(duration) || duration <= 0 || duration > 1439) {
+      setError(`${service.name}: duration must be a whole number from 1 to 1,439 minutes.`);
       return;
     }
     if (!Number.isFinite(price) || price < 0 || price > 99999999.99) {
