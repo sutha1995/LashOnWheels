@@ -9,6 +9,7 @@ import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
+import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
@@ -19,6 +20,7 @@ export type RootStackParamList = {
   Customer: { role: 'customer' };
   Freelancer: { role: 'freelancer' };
   FreelancerOnboarding: undefined;
+  FreelancerServices: undefined;
   Admin: { role: 'admin' };
 };
 
@@ -126,6 +128,11 @@ export default function App() {
           name="FreelancerOnboarding"
           component={FreelancerOnboardingScreen}
           options={{ title: 'Your profile' }}
+        />
+        <Stack.Screen
+          name="FreelancerServices"
+          component={FreelancerServicesScreen}
+          options={{ title: 'Services and pricing' }}
         />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
       </Stack.Navigator>
