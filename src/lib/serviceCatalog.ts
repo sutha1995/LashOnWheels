@@ -60,12 +60,15 @@ export async function saveFreelancerService(
 
   const { data, error } = await supabase
     .from('freelancer_services')
-    .upsert({
-      freelancer_id: userId,
-      service_id: serviceId,
-      ...values,
-      active: true,
-    })
+    .upsert(
+      {
+        freelancer_id: userId,
+        service_id: serviceId,
+        ...values,
+        active: true,
+      },
+      { onConflict: 'freelancer_id,service_id' },
+    )
     .select(
       'id, service_id, description, duration_minutes, price, active, service:services(id, name, description, duration_minutes, base_price)',
     )
