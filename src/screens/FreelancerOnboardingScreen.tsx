@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
-import { getFreelancerProfile, saveFreelancerProfile } from '../lib/profile';
+import { getFreelancerProfile, getProfile, saveFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FreelancerOnboarding'>;
@@ -32,11 +32,19 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         return;
       }
 
-      const result = await getFreelancerProfile(data.user.id);
+      const [accountResult, result] = await Promise.all([getProfile(data.user.id), getFreelancerProfile(data.user.id)]);
       if (!isMounted) {
         return;
       }
-      if (result.error) {
+      if (accountResult.error) {
+        setError(accountResult.error.message);
+      } else if (
+        !accountResult.profile ||
+        (accountResult.profile.role !== 'freelancer' && accountResult.profile.requested_role !== 'freelancer')
+      ) {
+        navigation.replace('Customer', { role: 'customer' });
+        return;
+      } else if (result.error) {
         setError(result.error.message);
       } else if (result.profile) {
         setDisplayName(result.profile.display_name);
@@ -63,19 +71,20 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       setError('Add your display name and service area.');
       return;
     }
-    if (
-      !Number.isInteger(experience) ||
-      experience < 0 ||
-      !Number.isFinite(maxDistance) ||
-      maxDistance <= 0 ||
-      !Number.isFinite(fee) ||
-      fee < 0
-    ) {
-      setError('Enter valid experience, travel distance, and travel fee values.');
+    if (!Number.isInteger(experience) || experience < 0 || experience > 80) {
+      setError('Years of experience must be a whole number from 0 to 80.');
+      return;
+    }
+    if (!Number.isFinite(maxDistance) || maxDistance <= 0 || maxDistance > 500) {
+      setError('Maximum travel distance must be greater than 0 and no more than 500 km.');
+      return;
+    }
+    if (!Number.isFinite(fee) || fee < 0 || fee > 9999.99) {
+      setError('Travel fee must be between RM0 and RM9,999.99.');
       return;
     }
     if (!supabase) {
-      navigation.replace('Freelancer', { role: 'freelancer' });
+      navigation.goBack();
       return;
     }
 
@@ -100,7 +109,7 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       setError(result.error.message);
       return;
     }
-    navigation.replace('Freelancer', { role: 'freelancer' });
+    navigation.goBack();
   };
 
   if (isLoading) {

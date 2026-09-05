@@ -16,7 +16,15 @@ alter table public.freelancer_profiles enable row level security;
 
 create policy "Freelancers can view their own profile"
   on public.freelancer_profiles for select
-  using ((select auth.uid()) = id);
+  using (
+    (select auth.uid()) = id
+    and exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and (profiles.role = 'freelancer' or profiles.requested_role = 'freelancer')
+    )
+  );
 
 create policy "Freelancer applicants can create their own profile"
   on public.freelancer_profiles for insert
@@ -32,8 +40,24 @@ create policy "Freelancer applicants can create their own profile"
 
 create policy "Freelancers can update their own profile"
   on public.freelancer_profiles for update
-  using ((select auth.uid()) = id)
-  with check ((select auth.uid()) = id);
+  using (
+    (select auth.uid()) = id
+    and exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and (profiles.role = 'freelancer' or profiles.requested_role = 'freelancer')
+    )
+  )
+  with check (
+    (select auth.uid()) = id
+    and exists (
+      select 1
+      from public.profiles
+      where profiles.id = (select auth.uid())
+        and (profiles.role = 'freelancer' or profiles.requested_role = 'freelancer')
+    )
+  );
 
 create trigger freelancer_profiles_updated_at
 before update on public.freelancer_profiles
