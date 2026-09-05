@@ -49,9 +49,14 @@ export function DashboardScreen({ navigation, route }: Props) {
         ))}
       </View>
       {route.params?.role === 'freelancer' && (
-        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('FreelancerOnboarding')}>
-          <Text style={styles.primaryButtonText}>Complete freelancer profile</Text>
-        </Pressable>
+        <>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('FreelancerOnboarding')}>
+            <Text style={styles.primaryButtonText}>Complete freelancer profile</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerServices')}>
+            <Text style={styles.secondaryButtonText}>Manage services and pricing</Text>
+          </Pressable>
+        </>
       )}
       <Pressable
         style={styles.signOutButton}
@@ -89,4 +94,6 @@ const styles = StyleSheet.create({
   signOutText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 24, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
+  secondaryButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 12, padding: 15 },
+  secondaryButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
 });
