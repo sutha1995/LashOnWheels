@@ -33,7 +33,9 @@ const copy = {
 
 export function DashboardScreen({ navigation, route }: Props) {
   const [serviceAccessError, setServiceAccessError] = useState('');
-  const content = copy[route.params?.role ?? 'customer'];
+  const role = route.params?.role ?? 'customer';
+  const isPreview = route.params?.preview ?? false;
+  const content = copy[role];
 
   const openFreelancerServices = async () => {
     setServiceAccessError('');
@@ -80,7 +82,27 @@ export function DashboardScreen({ navigation, route }: Props) {
           </View>
         ))}
       </View>
-      {route.params?.role === 'freelancer' && (
+      {role === 'admin' && (
+        <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>Preview customer and freelancer experiences</Text>
+          <Text style={styles.previewBody}>
+            These read-only previews do not change your admin permissions or grant access to protected data.
+          </Text>
+          <Pressable
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('Customer', { role: 'customer', preview: true })}
+          >
+            <Text style={styles.primaryButtonText}>Preview customer experience</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Freelancer', { role: 'freelancer', preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview freelancer experience</Text>
+          </Pressable>
+        </View>
+      )}
+      {role === 'freelancer' && !isPreview && (
         <>
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('FreelancerOnboarding')}>
             <Text style={styles.primaryButtonText}>Complete freelancer profile</Text>
@@ -91,18 +113,24 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
         </>
       )}
-      <Pressable
-        style={styles.signOutButton}
-        onPress={() => {
-          if (!hasSupabaseConfig) {
-            navigation.replace('Welcome');
-            return;
-          }
-          void signOut();
-        }}
-      >
-        <Text style={styles.signOutText}>Sign out</Text>
-      </Pressable>
+      {isPreview ? (
+        <Pressable style={styles.signOutButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.signOutText}>Back to Admin control centre</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          style={styles.signOutButton}
+          onPress={() => {
+            if (!hasSupabaseConfig) {
+              navigation.replace('Welcome');
+              return;
+            }
+            void signOut();
+          }}
+        >
+          <Text style={styles.signOutText}>Sign out</Text>
+        </Pressable>
+      )}
     </ScrollView>
   );
 }
@@ -113,6 +141,16 @@ const styles = StyleSheet.create({
   title: { color: theme.colors.ink, fontSize: 34, fontWeight: '800', lineHeight: 40, marginTop: 12 },
   body: { color: theme.colors.muted, fontSize: 17, lineHeight: 25, marginTop: 14 },
   section: { gap: 12, marginTop: 30 },
+  previewSection: {
+    backgroundColor: theme.colors.white,
+    borderColor: theme.colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 24,
+    padding: 18,
+  },
+  previewTitle: { color: theme.colors.ink, fontSize: 18, fontWeight: '800' },
+  previewBody: { color: theme.colors.muted, lineHeight: 20, marginTop: 6 },
   card: {
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.border,
