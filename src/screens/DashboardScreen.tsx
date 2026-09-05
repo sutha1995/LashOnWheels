@@ -53,7 +53,7 @@ export function DashboardScreen({ navigation, route }: Props) {
       setServiceAccessError(result.error.message);
       return;
     }
-    if (!result.profile) {
+    if (!result.profile || !result.profile.onboarding_completed) {
       setServiceAccessError('Complete your freelancer profile before adding services.');
       navigation.navigate('FreelancerOnboarding');
       return;

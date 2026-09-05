@@ -51,7 +51,7 @@ export function FreelancerServicesScreen({ navigation }: Props) {
         }
         return;
       }
-      if (!profileResult.profile) {
+      if (!profileResult.profile || !profileResult.profile.onboarding_completed) {
         navigation.replace('FreelancerOnboarding');
         return;
       }
