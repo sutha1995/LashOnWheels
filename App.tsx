@@ -17,11 +17,11 @@ import { supabase } from './src/lib/supabase';
 export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
-  Customer: { role: 'customer' };
-  Freelancer: { role: 'freelancer' };
+  Customer: { role: 'customer'; preview?: boolean };
+  Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
   FreelancerServices: undefined;
-  Admin: { role: 'admin' };
+  Admin: { role: 'admin'; preview?: boolean };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
