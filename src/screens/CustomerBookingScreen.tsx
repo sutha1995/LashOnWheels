@@ -34,6 +34,13 @@ function isValidTime(value: string) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
+function getLocalDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function addMinutes(time: string, minutes: number) {
   const [hours, mins] = time.split(':').map(Number);
   const totalMinutes = hours * 60 + mins + minutes;
@@ -98,7 +105,7 @@ export function CustomerBookingScreen({ navigation }: Props) {
       setError('Choose a service first.');
       return;
     }
-    if (!isValidDate(scheduledDate) || new Date(`${scheduledDate}T00:00:00Z`) < new Date()) {
+    if (!isValidDate(scheduledDate) || scheduledDate <= getLocalDateKey(new Date())) {
       setError('Choose a valid future date in YYYY-MM-DD format.');
       return;
     }
