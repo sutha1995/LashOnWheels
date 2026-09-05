@@ -1,3 +1,15 @@
+update public.services
+set duration_minutes = 1439
+where duration_minutes = 1440;
+
+update public.freelancer_services
+set duration_minutes = 1439
+where duration_minutes = 1440;
+
+update public.bookings
+set duration_minutes = 1439
+where duration_minutes = 1440;
+
 alter table public.services
   drop constraint services_duration_minutes_check,
   add constraint services_duration_minutes_check
