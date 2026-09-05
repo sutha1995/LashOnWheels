@@ -14,6 +14,18 @@ export type Profile = {
   requested_role: SignupRole;
 };
 
+export type FreelancerProfile = {
+  id: string;
+  display_name: string;
+  bio: string;
+  experience_years: number;
+  service_area: string;
+  max_travel_distance_km: number;
+  travel_fee: number;
+  profile_photo_url: string | null;
+  onboarding_completed: boolean;
+};
+
 export async function saveProfile(user: User, fullName: string, requestedRole: SignupRole) {
   if (!supabase) {
     return { profile: null, error: new Error('Supabase is not configured.') };
@@ -39,6 +51,41 @@ export async function getProfile(userId: string) {
     .eq('id', userId)
     .single();
   return { profile: data as Profile | null, error };
+}
+
+export async function getFreelancerProfile(userId: string) {
+  if (!supabase) {
+    return { profile: null, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase
+    .from('freelancer_profiles')
+    .select(
+      'id, display_name, bio, experience_years, service_area, max_travel_distance_km, travel_fee, profile_photo_url, onboarding_completed',
+    )
+    .eq('id', userId)
+    .maybeSingle();
+
+  return { profile: data as FreelancerProfile | null, error };
+}
+
+export async function saveFreelancerProfile(
+  userId: string,
+  values: Omit<FreelancerProfile, 'id' | 'profile_photo_url' | 'onboarding_completed'>,
+) {
+  if (!supabase) {
+    return { profile: null, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase
+    .from('freelancer_profiles')
+    .upsert({ id: userId, ...values, onboarding_completed: true })
+    .select(
+      'id, display_name, bio, experience_years, service_area, max_travel_distance_km, travel_fee, profile_photo_url, onboarding_completed',
+    )
+    .single();
+
+  return { profile: data as FreelancerProfile | null, error };
 }
 
 export async function ensureProfile(user: User) {

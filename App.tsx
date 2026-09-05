@@ -8,6 +8,7 @@ import logo from './assets/lash-on-wheels-logo.png';
 import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Customer: { role: 'customer' };
   Freelancer: { role: 'freelancer' };
+  FreelancerOnboarding: undefined;
   Admin: { role: 'admin' };
 };
 
@@ -40,6 +42,7 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(Boolean(supabase));
   const [hasSession, setHasSession] = useState(false);
   const [role, setRole] = useState<UserRole>('customer');
+  const [requestedRole, setRequestedRole] = useState<'customer' | 'freelancer'>('customer');
 
   useEffect(() => {
     if (!supabase) {
@@ -56,6 +59,7 @@ export default function App() {
         }
         setHasSession(false);
         setRole('customer');
+        setRequestedRole('customer');
         setIsAuthLoading(false);
         return;
       }
@@ -67,6 +71,7 @@ export default function App() {
       }
       setHasSession(true);
       setRole(profile?.role ?? 'customer');
+      setRequestedRole(profile?.requested_role ?? 'customer');
       setIsAuthLoading(false);
     };
 
@@ -99,7 +104,13 @@ export default function App() {
       <Stack.Navigator
         key={hasSession ? 'authenticated' : 'anonymous'}
         initialRouteName={
-          hasSession ? (role === 'freelancer' ? 'Freelancer' : role === 'admin' ? 'Admin' : 'Customer') : 'Welcome'
+          hasSession
+            ? role === 'admin'
+              ? 'Admin'
+              : role === 'freelancer' || requestedRole === 'freelancer'
+                ? 'Freelancer'
+                : 'Customer'
+            : 'Welcome'
         }
         screenOptions={{
           headerTintColor: theme.colors.ink,
@@ -111,6 +122,11 @@ export default function App() {
         <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Welcome back' }} />
         <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
+        <Stack.Screen
+          name="FreelancerOnboarding"
+          component={FreelancerOnboardingScreen}
+          options={{ title: 'Your profile' }}
+        />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
       </Stack.Navigator>
     </NavigationContainer>

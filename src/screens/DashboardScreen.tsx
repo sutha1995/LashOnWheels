@@ -17,8 +17,8 @@ const copy = {
   freelancer: {
     eyebrow: 'YOUR BUSINESS, ON THE MOVE',
     title: 'Grow your beauty business',
-    body: 'Set your availability, manage bookings, and bring your craft to more customers.',
-    cards: ['Complete your profile', 'Add your services', 'Set your availability'],
+    body: 'Build your professional profile, then add services and availability as the marketplace grows.',
+    cards: ['Professional profile', 'Services and pricing', 'Availability'],
   },
   admin: {
     eyebrow: 'PLATFORM OVERVIEW',
@@ -40,10 +40,19 @@ export function DashboardScreen({ navigation, route }: Props) {
           <View key={card} style={styles.card}>
             <Text style={styles.cardNumber}>0{index + 1}</Text>
             <Text style={styles.cardTitle}>{card}</Text>
-            <Text style={styles.cardBody}>Ready for Phase {index + 1} implementation.</Text>
+            <Text style={styles.cardBody}>
+              {route.params?.role === 'freelancer' && index === 0
+                ? 'Tell customers what makes your work special.'
+                : `Ready for Phase ${index + 1} implementation.`}
+            </Text>
           </View>
         ))}
       </View>
+      {route.params?.role === 'freelancer' && (
+        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('FreelancerOnboarding')}>
+          <Text style={styles.primaryButtonText}>Complete freelancer profile</Text>
+        </Pressable>
+      )}
       <Pressable
         style={styles.signOutButton}
         onPress={() => {
@@ -78,4 +87,6 @@ const styles = StyleSheet.create({
   cardBody: { color: theme.colors.muted, marginTop: 6 },
   signOutButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 28, padding: 15 },
   signOutText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
+  primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 24, padding: 16 },
+  primaryButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
 });
