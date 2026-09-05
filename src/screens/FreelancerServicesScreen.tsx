@@ -17,7 +17,29 @@ import { supabase } from '../lib/supabase';
 type Props = NativeStackScreenProps<RootStackParamList, 'FreelancerServices'>;
 type Draft = { description: string; duration: string; price: string };
 
-export function FreelancerServicesScreen({ navigation }: Props) {
+const previewServices = [
+  {
+    name: 'Lash Lift',
+    description: 'A natural curl and lift for your lashes.',
+    price: 'RM120',
+    duration: '60 minutes',
+  },
+  {
+    name: 'Lash Tint',
+    description: 'A darker lash look without daily mascara.',
+    price: 'RM80',
+    duration: '45 minutes',
+  },
+  {
+    name: 'Classic Lash Extension',
+    description: 'Lightweight individual extensions for an everyday look.',
+    price: 'RM180',
+    duration: '120 minutes',
+  },
+];
+
+export function FreelancerServicesScreen({ navigation, route }: Props) {
+  const isPreview = route.params?.preview ?? false;
   const [catalog, setCatalog] = useState<Service[]>([]);
   const [offeredServices, setOfferedServices] = useState<FreelancerService[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -31,6 +53,10 @@ export function FreelancerServicesScreen({ navigation }: Props) {
   );
 
   useEffect(() => {
+    if (isPreview) {
+      setIsLoading(false);
+      return;
+    }
     if (!supabase) {
       setIsLoading(false);
       return;
@@ -75,7 +101,7 @@ export function FreelancerServicesScreen({ navigation }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [navigation]);
+  }, [isPreview, navigation]);
 
   const getDraft = (service: Service): Draft => {
     const existing = offeredByServiceId.get(service.id);
@@ -161,6 +187,34 @@ export function FreelancerServicesScreen({ navigation }: Props) {
     );
   }
 
+  if (isPreview) {
+    return (
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+        <Text style={styles.eyebrow}>SERVICES AND PRICING PREVIEW</Text>
+        <Text style={styles.title}>Example freelancer pricing</Text>
+        <Text style={styles.subtitle}>
+          This read-only preview shows how services and pricing will appear to customers.
+        </Text>
+        {previewServices.map((service) => (
+          <View key={service.name} style={styles.card}>
+            <View style={styles.cardHeader}>
+              <View style={styles.cardTitleBlock}>
+                <Text style={styles.cardTitle}>{service.name}</Text>
+                <Text style={styles.cardDescription}>{service.description}</Text>
+              </View>
+              <Text style={styles.activeLabel}>PREVIEW</Text>
+            </View>
+            <Text style={styles.previewValue}>{service.price}</Text>
+            <Text style={styles.previewMeta}>{service.duration}</Text>
+          </View>
+        ))}
+        <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.secondaryButtonText}>Back to freelancer preview</Text>
+        </Pressable>
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.eyebrow}>SERVICES AND PRICING</Text>
@@ -243,6 +297,8 @@ const styles = StyleSheet.create({
   cardTitle: { color: theme.colors.ink, fontSize: 19, fontWeight: '800' },
   cardDescription: { color: theme.colors.muted, lineHeight: 20, marginTop: 6 },
   activeLabel: { color: theme.colors.success, fontSize: 11, fontWeight: '800' },
+  previewValue: { color: theme.colors.ink, fontSize: 24, fontWeight: '800', marginTop: 18 },
+  previewMeta: { color: theme.colors.muted, fontSize: 14, marginTop: 4 },
   input: {
     backgroundColor: theme.colors.cream,
     borderColor: theme.colors.border,

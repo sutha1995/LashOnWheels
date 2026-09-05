@@ -14,6 +14,16 @@ import { supabase } from '../lib/supabase';
 type Props = NativeStackScreenProps<RootStackParamList, 'FreelancerAvailability'>;
 type AvailabilityDraft = { isAvailable: boolean; startTime: string; endTime: string };
 
+const previewAvailability = [
+  { label: 'Monday', hours: '09:00–18:00' },
+  { label: 'Tuesday', hours: '09:00–18:00' },
+  { label: 'Wednesday', hours: 'Unavailable' },
+  { label: 'Thursday', hours: '10:00–19:00' },
+  { label: 'Friday', hours: '10:00–19:00' },
+  { label: 'Saturday', hours: '11:00–17:00' },
+  { label: 'Sunday', hours: 'Unavailable' },
+];
+
 const days = [
   { value: 0, label: 'Monday' },
   { value: 1, label: 'Tuesday' },
@@ -46,7 +56,8 @@ function isValidTime(value: string) {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 }
 
-export function FreelancerAvailabilityScreen({ navigation }: Props) {
+export function FreelancerAvailabilityScreen({ navigation, route }: Props) {
+  const isPreview = route.params?.preview ?? false;
   const [drafts, setDrafts] = useState<Record<number, AvailabilityDraft>>(createDefaultDrafts);
   const [error, setError] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -56,6 +67,10 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    if (isPreview) {
+      setIsLoading(false);
+      return;
+    }
     let isMounted = true;
     setIsLoaded(false);
     setLoadError('');
@@ -103,7 +118,7 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [loadAttempt, navigation]);
+  }, [isPreview, loadAttempt, navigation]);
 
   const updateDraft = (dayOfWeek: number, field: keyof AvailabilityDraft, value: boolean | string) => {
     setDrafts((current) => ({
@@ -159,6 +174,27 @@ export function FreelancerAvailabilityScreen({ navigation }: Props) {
       <View style={styles.loadingContainer}>
         <Text style={styles.loadingText}>Loading your availability…</Text>
       </View>
+    );
+  }
+
+  if (isPreview) {
+    return (
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.container}>
+        <Text style={styles.eyebrow}>AVAILABILITY PREVIEW</Text>
+        <Text style={styles.title}>Example working hours</Text>
+        <Text style={styles.subtitle}>
+          This read-only preview shows how a freelancer’s weekly availability will be presented.
+        </Text>
+        {previewAvailability.map((day) => (
+          <View key={day.label} style={styles.dayCard}>
+            <Text style={styles.dayLabel}>{day.label}</Text>
+            <Text style={styles.previewHours}>{day.hours}</Text>
+          </View>
+        ))}
+        <Pressable style={styles.primaryButton} onPress={() => navigation.goBack()}>
+          <Text style={styles.primaryButtonText}>Back to freelancer preview</Text>
+        </Pressable>
+      </ScrollView>
     );
   }
 
@@ -243,6 +279,7 @@ const styles = StyleSheet.create({
   },
   dayHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   dayLabel: { color: theme.colors.ink, fontSize: 16, fontWeight: '800' },
+  previewHours: { color: theme.colors.muted, fontSize: 16, marginTop: 8 },
   toggle: {
     borderColor: theme.colors.border,
     borderRadius: 999,

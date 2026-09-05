@@ -21,8 +21,8 @@ export type RootStackParamList = {
   Customer: { role: 'customer'; preview?: boolean };
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
-  FreelancerServices: undefined;
-  FreelancerAvailability: undefined;
+  FreelancerServices: { preview?: boolean } | undefined;
+  FreelancerAvailability: { preview?: boolean } | undefined;
   Admin: { role: 'admin'; preview?: boolean };
 };
 
