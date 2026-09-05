@@ -42,7 +42,7 @@ export async function getMarketplaceServices() {
     return { services: [], error };
   }
 
-  const serviceRows = data as Array<Omit<MarketplaceService, 'freelancer'> & { service: Service[] }>;
+  const serviceRows = data as Array<Omit<MarketplaceService, 'freelancer'> & { service: Service | Service[] | null }>;
   const freelancerIds = [...new Set(serviceRows.map((service) => service.freelancer_id))];
   if (!freelancerIds.length) {
     return { services: [], error: null };
@@ -61,7 +61,7 @@ export async function getMarketplaceServices() {
   const services = serviceRows
     .map((service) => {
       const freelancer = profilesById.get(service.freelancer_id);
-      const catalogService = service.service[0];
+      const catalogService = Array.isArray(service.service) ? service.service[0] : service.service;
       return freelancer && catalogService ? { ...service, service: catalogService, freelancer } : null;
     })
     .filter((service): service is MarketplaceService => service !== null);
