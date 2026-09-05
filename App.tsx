@@ -10,6 +10,7 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
+import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
   FreelancerServices: undefined;
+  FreelancerAvailability: undefined;
   Admin: { role: 'admin'; preview?: boolean };
 };
 
@@ -133,6 +135,11 @@ export default function App() {
           name="FreelancerServices"
           component={FreelancerServicesScreen}
           options={{ title: 'Services and pricing' }}
+        />
+        <Stack.Screen
+          name="FreelancerAvailability"
+          component={FreelancerAvailabilityScreen}
+          options={{ title: 'Availability' }}
         />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
       </Stack.Navigator>

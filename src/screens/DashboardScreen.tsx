@@ -111,6 +111,9 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.secondaryButton} onPress={() => void openFreelancerServices()}>
             <Text style={styles.secondaryButtonText}>Manage services and pricing</Text>
           </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerAvailability')}>
+            <Text style={styles.secondaryButtonText}>Set availability</Text>
+          </Pressable>
         </>
       )}
       {isPreview ? (
