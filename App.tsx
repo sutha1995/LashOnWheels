@@ -8,6 +8,7 @@ import logo from './assets/lash-on-wheels-logo.png';
 import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
@@ -19,6 +20,7 @@ export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
   Customer: { role: 'customer'; preview?: boolean };
+  CustomerBooking: undefined;
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
   FreelancerServices: { preview?: boolean } | undefined;
@@ -125,6 +127,7 @@ export default function App() {
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Welcome back' }} />
         <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
+        <Stack.Screen name="CustomerBooking" component={CustomerBookingScreen} options={{ title: 'Book a service' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
         <Stack.Screen
           name="FreelancerOnboarding"

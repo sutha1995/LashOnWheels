@@ -102,6 +102,11 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
         </View>
       )}
+      {role === 'customer' && !isPreview && (
+        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
+          <Text style={styles.primaryButtonText}>Browse services and book</Text>
+        </Pressable>
+      )}
       {role === 'freelancer' && !isPreview && (
         <>
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('FreelancerOnboarding')}>
