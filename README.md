@@ -14,6 +14,7 @@ Phase 0 establishes the Expo SDK 57 + TypeScript app shell:
 - Email/password registration and sign-in with customer/freelancer profile roles.
 - Session restoration, authenticated routing, and a versioned `profiles` migration with RLS.
 - Freelancer sign-up requests are recorded separately from the access role until onboarding approval.
+- Freelancer applicants can save a professional profile, service area, and travel settings as the first Phase 2 onboarding step.
 - ESLint, Prettier, and strict TypeScript checks.
 
 ## Run locally
@@ -47,4 +48,4 @@ The auth screen includes a Supabase Google OAuth action when the public Supabase
 4. In Supabase **Authentication → URL Configuration**, add the app redirect URL. For local web development, use the URL Expo prints when the app starts.
 
 The app uses the `lashonwheels://auth/callback` scheme for native OAuth sessions.
-Never commit `.env` or service-role keys. Database schema, authentication, RLS, booking, payment, and storage features will be added in later PRD phases.
+Never commit `.env` or service-role keys. Apply the freelancer profile migration before using the onboarding form with real accounts. Booking, payment, portfolio storage, and service catalog features will be added in later PRD phases.
