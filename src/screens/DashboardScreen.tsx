@@ -116,6 +116,26 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
         </>
       )}
+      {role === 'freelancer' && isPreview && (
+        <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>Preview freelancer tools</Text>
+          <Text style={styles.previewBody}>
+            Review example pricing and availability without accessing protected freelancer data.
+          </Text>
+          <Pressable
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('FreelancerServices', { preview: true })}
+          >
+            <Text style={styles.primaryButtonText}>Preview services and pricing</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('FreelancerAvailability', { preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview availability</Text>
+          </Pressable>
+        </View>
+      )}
       {isPreview ? (
         <Pressable style={styles.signOutButton} onPress={() => navigation.goBack()}>
           <Text style={styles.signOutText}>Back to Admin control centre</Text>
