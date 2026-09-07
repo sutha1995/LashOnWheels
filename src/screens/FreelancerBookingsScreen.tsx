@@ -230,6 +230,20 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
                 )}
               </View>
             )}
+            {booking.status !== 'cancelled' && (
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() =>
+                  navigation.navigate('BookingChat', {
+                    bookingId: booking.id,
+                    serviceName: booking.service_name,
+                    ...(isPreview ? { preview: true } : {}),
+                  })
+                }
+              >
+                <Text style={styles.secondaryButtonText}>Open booking chat</Text>
+              </Pressable>
+            )}
             {!isPreview && booking.status === 'pending' && (
               <View style={styles.actions}>
                 <Pressable
