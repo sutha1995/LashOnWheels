@@ -39,21 +39,6 @@ Deno.serve(async (request) => {
 
     adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
     claimedBookingId = bookingId;
-    claimToken = crypto.randomUUID();
-    const { data: claimData, error: claimError } = await adminClient.rpc('claim_booking_checkout', {
-      p_booking_id: bookingId,
-      p_customer_id: userData.user.id,
-      p_claim_token: claimToken,
-    });
-    if (claimError) {
-      throw claimError;
-    }
-    const claim = (claimData as Array<{ claimed: boolean; payment_reference: string | null }> | null)?.[0];
-    if (!claim?.claimed) {
-      return jsonResponse({ error: 'A checkout session is already being processed for this booking.' }, 409);
-    }
-    checkoutClaimed = true;
-
     const { data: booking, error: bookingError } = await adminClient
       .from('bookings')
       .select('id, customer_id, service_name, price, status, payment_status')
@@ -77,6 +62,24 @@ Deno.serve(async (request) => {
       throw new Error('STRIPE_SUCCESS_URL and STRIPE_CANCEL_URL are not configured.');
     }
 
+    claimToken = crypto.randomUUID();
+    const { data: claimData, error: claimError } = await adminClient.rpc('claim_booking_checkout', {
+      p_booking_id: bookingId,
+      p_customer_id: userData.user.id,
+      p_claim_token: claimToken,
+    });
+    if (claimError) {
+      throw claimError;
+    }
+    const claim = (claimData as Array<{ claimed: boolean; payment_reference: string | null }> | null)?.[0];
+    if (!claim?.claimed) {
+      return jsonResponse({ error: 'A checkout session is already being processed for this booking.' }, 409);
+    }
+    if (claim.payment_reference) {
+      claimToken = claim.payment_reference;
+    }
+    checkoutClaimed = true;
+
     const params = new URLSearchParams();
     params.set('mode', 'payment');
     params.set('line_items[0][price_data][currency]', 'myr');
@@ -86,16 +89,16 @@ Deno.serve(async (request) => {
     params.set('client_reference_id', booking.id);
     params.set('metadata[booking_id]', booking.id);
     params.set('metadata[customer_id]', userData.user.id);
+    params.set('metadata[checkout_claim_token]', claimToken);
     params.set('success_url', successUrl);
     params.set('cancel_url', cancelUrl);
 
     const session = await stripeRequest('checkout/sessions', params, `booking-checkout-${booking.id}-${claimToken}`);
     stripeSessionId = session.id;
-    const { error: paymentError } = await adminClient.rpc('set_booking_payment_status', {
+    const { error: paymentError } = await adminClient.rpc('finalize_booking_checkout', {
       p_booking_id: booking.id,
-      p_payment_status: 'pending',
-      p_payment_provider: 'stripe',
-      p_payment_reference: session.id,
+      p_claim_token: claimToken,
+      p_session_id: session.id,
     });
     if (paymentError) {
       throw paymentError;

@@ -25,7 +25,8 @@ Deno.serve(async (request) => {
     const event = JSON.parse(payload);
     const session = event.data?.object;
     const bookingId = session?.metadata?.booking_id;
-    if (typeof bookingId !== 'string') {
+    const claimToken = session?.metadata?.checkout_claim_token;
+    if (typeof bookingId !== 'string' || typeof claimToken !== 'string') {
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -47,30 +48,11 @@ Deno.serve(async (request) => {
     }
 
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
-    const { data: booking, error: bookingError } = await adminClient
-      .from('bookings')
-      .select('status, payment_status, payment_reference')
-      .eq('id', bookingId)
-      .maybeSingle();
-    if (bookingError) {
-      throw bookingError;
-    }
-    if (
-      !booking ||
-      booking.status !== 'confirmed' ||
-      booking.payment_status === 'paid' ||
-      (booking.payment_reference && booking.payment_reference !== session.id)
-    ) {
-      return new Response(JSON.stringify({ received: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { error } = await adminClient.rpc('set_booking_payment_status', {
+    const { error } = await adminClient.rpc('apply_stripe_payment_event', {
       p_booking_id: bookingId,
+      p_session_id: session.id,
+      p_claim_token: claimToken,
       p_payment_status: paymentStatus,
-      p_payment_provider: 'stripe',
-      p_payment_reference: session.id,
     });
     if (error) {
       throw error;
