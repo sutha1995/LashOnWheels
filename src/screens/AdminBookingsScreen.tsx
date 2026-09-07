@@ -27,6 +27,7 @@ export function AdminBookingsScreen({ navigation }: Props) {
     const loadBookings = async () => {
       if (!supabase) {
         setError('Connect Supabase before loading bookings.');
+        setBookings([]);
         setIsLoading(false);
         return;
       }
@@ -47,11 +48,13 @@ export function AdminBookingsScreen({ navigation }: Props) {
       }
       if (profileResult.error) {
         setError(profileResult.error.message);
+        setBookings([]);
         setIsLoading(false);
         return;
       }
       if (profileResult.profile?.role !== 'admin') {
         setError('Only admin accounts can view all bookings.');
+        setBookings([]);
         setIsLoading(false);
         return;
       }
@@ -62,6 +65,7 @@ export function AdminBookingsScreen({ navigation }: Props) {
       }
       if (result.error) {
         setError(result.error.message);
+        setBookings([]);
       } else {
         setError('');
         setBookings(result.bookings);

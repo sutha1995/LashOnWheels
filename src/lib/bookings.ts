@@ -131,15 +131,32 @@ export async function getAdminBookings() {
     return { bookings: [], error: new Error('Supabase is not configured.') };
   }
 
-  const { data, error } = await supabase
-    .from('bookings')
-    .select(
-      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, created_at',
-    )
-    .order('scheduled_date', { ascending: true })
-    .order('start_time', { ascending: true });
+  const pageSize = 1000;
+  const bookings: Booking[] = [];
+  let pageStart = 0;
 
-  return { bookings: (data ?? []) as Booking[], error };
+  while (true) {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(
+        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, created_at',
+      )
+      .order('scheduled_date', { ascending: true })
+      .order('start_time', { ascending: true })
+      .order('id', { ascending: true })
+      .range(pageStart, pageStart + pageSize - 1);
+
+    if (error) {
+      return { bookings: [], error };
+    }
+
+    const page = (data ?? []) as Booking[];
+    bookings.push(...page);
+    if (page.length < pageSize) {
+      return { bookings, error: null };
+    }
+    pageStart += pageSize;
+  }
 }
 
 export async function cancelBooking(bookingId: string) {
