@@ -15,6 +15,7 @@ Deno.serve(async (request) => {
   let adminClient: ReturnType<typeof createClient> | null = null;
   let claimToken = '';
   let claimedBookingId = '';
+  let claimTimestamp = '';
   let checkoutClaimed = false;
   let stripeSessionId = '';
 
@@ -71,12 +72,21 @@ Deno.serve(async (request) => {
     if (claimError) {
       throw claimError;
     }
-    const claim = (claimData as Array<{ claimed: boolean; payment_reference: string | null }> | null)?.[0];
+    const claim = (
+      claimData as Array<{
+        claimed: boolean;
+        payment_reference: string | null;
+        claimed_at: string | null;
+      }> | null
+    )?.[0];
     if (!claim?.claimed) {
       return jsonResponse({ error: 'A checkout session is already being processed for this booking.' }, 409);
     }
     if (claim.payment_reference) {
       claimToken = claim.payment_reference;
+    }
+    if (claim.claimed_at) {
+      claimTimestamp = claim.claimed_at;
     }
     checkoutClaimed = true;
 
@@ -106,12 +116,11 @@ Deno.serve(async (request) => {
 
     return jsonResponse({ url: session.url });
   } catch (error) {
-    if (adminClient && checkoutClaimed && claimToken && !stripeSessionId) {
-      await adminClient.rpc('set_booking_payment_status', {
+    if (adminClient && checkoutClaimed && claimToken && claimTimestamp && !stripeSessionId) {
+      await adminClient.rpc('release_booking_checkout', {
         p_booking_id: claimedBookingId,
-        p_payment_status: 'failed',
-        p_payment_provider: 'stripe',
-        p_payment_reference: claimToken,
+        p_claim_token: claimToken,
+        p_claimed_at: claimTimestamp,
       });
     }
     return jsonResponse({ error: error instanceof Error ? error.message : 'Unable to start checkout.' }, 500);
