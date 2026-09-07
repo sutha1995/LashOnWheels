@@ -126,6 +126,15 @@ export async function getCustomerBookings(userId: string) {
   return { bookings: (data ?? []) as Booking[], error };
 }
 
+export async function cancelBooking(bookingId: string) {
+  if (!supabase) {
+    return { booking: null, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId });
+  return { booking: data as Booking | null, error };
+}
+
 export async function updateBookingStatus(bookingId: string, action: 'confirm_booking' | 'reject_booking') {
   if (!supabase) {
     return { booking: null, error: new Error('Supabase is not configured.') };

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
-import { getCustomerBookings, type Booking } from '../lib/bookings';
+import { cancelBooking, getCustomerBookings, type Booking } from '../lib/bookings';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CustomerBookings'>;
@@ -53,21 +53,28 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [cancellingBookingId, setCancellingBookingId] = useState('');
 
   useEffect(() => {
-    if (isPreview) {
-      setBookings(previewBookings);
-      setIsLoading(false);
-      return;
-    }
-    if (!supabase) {
-      setError('Connect Supabase before loading bookings.');
-      setIsLoading(false);
-      return;
-    }
-
     let isMounted = true;
-    void supabase.auth.getUser().then(async ({ data }) => {
+    const loadBookings = async () => {
+      if (isPreview) {
+        setBookings(previewBookings);
+        setError('');
+        setIsLoading(false);
+        return;
+      }
+      if (!supabase) {
+        setError('Connect Supabase before loading bookings.');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      const { data } = await supabase.auth.getUser();
+      if (!isMounted) {
+        return;
+      }
       if (!data.user) {
         navigation.replace('Welcome');
         return;
@@ -78,14 +85,24 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
       }
       if (result.error) {
         setError(result.error.message);
+        setBookings([]);
       } else {
+        setError('');
         setBookings(result.bookings);
       }
       setIsLoading(false);
+    };
+
+    void loadBookings();
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!isPreview) {
+        void loadBookings();
+      }
     });
 
     return () => {
       isMounted = false;
+      unsubscribe();
     };
   }, [isPreview, navigation]);
 
@@ -107,12 +124,12 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
           : 'See the latest status and details for every booking you have requested.'}
       </Text>
       {!!error && <Text style={styles.errorText}>{error}</Text>}
-      {bookings.length === 0 ? (
+      {!error && bookings.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No bookings yet</Text>
           <Text style={styles.emptyBody}>Your requested appointments will appear here.</Text>
         </View>
-      ) : (
+      ) : !error ? (
         bookings.map((booking) => (
           <View key={booking.id} style={styles.card}>
             <View style={styles.cardHeader}>
@@ -127,9 +144,35 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
             <Text style={styles.price}>RM{booking.price.toFixed(2)}</Text>
             <Text style={styles.meta}>{booking.duration_minutes} minutes</Text>
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
+            {!isPreview && (booking.status === 'pending' || booking.status === 'confirmed') && (
+              <Pressable
+                style={styles.cancelButton}
+                disabled={cancellingBookingId === booking.id}
+                onPress={() => {
+                  setError('');
+                  setCancellingBookingId(booking.id);
+                  void cancelBooking(booking.id).then((result) => {
+                    setCancellingBookingId('');
+                    if (result.error || !result.booking) {
+                      setError(result.error?.message ?? 'Unable to cancel this booking.');
+                      return;
+                    }
+                    setBookings((current) =>
+                      current.map((currentBooking) =>
+                        currentBooking.id === booking.id ? result.booking! : currentBooking,
+                      ),
+                    );
+                  });
+                }}
+              >
+                <Text style={styles.cancelButtonText}>
+                  {cancellingBookingId === booking.id ? 'Cancelling…' : 'Cancel booking'}
+                </Text>
+              </Pressable>
+            )}
           </View>
         ))
-      )}
+      ) : null}
       <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
         <Text style={styles.secondaryButtonText}>{isPreview ? 'Back to customer preview' : 'Back to dashboard'}</Text>
       </Pressable>
@@ -166,6 +209,8 @@ const styles = StyleSheet.create({
   price: { color: theme.colors.ink, fontSize: 20, fontWeight: '800', marginTop: 18 },
   meta: { color: theme.colors.muted, marginTop: 4 },
   note: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 14 },
+  cancelButton: { borderColor: '#F1B5B0', borderRadius: 10, borderWidth: 1, marginTop: 16, padding: 12 },
+  cancelButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },
   emptyCard: {
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.border,
