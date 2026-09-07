@@ -26,6 +26,7 @@ export type Booking = {
   duration_minutes: number;
   customer_note: string;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  payment_status: 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded';
   created_at: string;
 };
 
@@ -100,7 +101,7 @@ export async function getFreelancerBookings(userId: string) {
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, created_at',
+      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
     )
     .eq('freelancer_id', userId)
     .order('scheduled_date', { ascending: true })
@@ -117,7 +118,7 @@ export async function getCustomerBookings(userId: string) {
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, created_at',
+      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
     )
     .eq('customer_id', userId)
     .order('scheduled_date', { ascending: false })
@@ -139,7 +140,7 @@ export async function getAdminBookings() {
     let query = supabase
       .from('bookings')
       .select(
-        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, created_at',
+        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
       )
       .order('scheduled_date', { ascending: true })
       .order('start_time', { ascending: true })

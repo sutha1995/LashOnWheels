@@ -23,6 +23,7 @@ const previewBookings: Booking[] = [
     duration_minutes: 60,
     customer_note: 'Please bring a natural brown tint if available.',
     status: 'pending',
+    payment_status: 'unpaid',
     created_at: '2026-09-01T08:00:00Z',
   },
   {
@@ -38,6 +39,7 @@ const previewBookings: Booking[] = [
     duration_minutes: 60,
     customer_note: '',
     status: 'confirmed',
+    payment_status: 'pending',
     created_at: '2026-09-01T08:15:00Z',
   },
 ];
@@ -47,6 +49,14 @@ const statusLabels: Record<Booking['status'], string> = {
   confirmed: 'CONFIRMED',
   cancelled: 'CANCELLED',
   completed: 'COMPLETED',
+};
+
+const paymentStatusLabels: Record<Booking['payment_status'], string> = {
+  unpaid: 'PAYMENT UNPAID',
+  pending: 'PAYMENT PENDING',
+  paid: 'PAID',
+  failed: 'PAYMENT FAILED',
+  refunded: 'REFUNDED',
 };
 
 export function FreelancerBookingsScreen({ navigation, route }: Props) {
@@ -157,6 +167,9 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
             </View>
             <Text style={styles.price}>RM{booking.price.toFixed(2)}</Text>
             <Text style={styles.meta}>{booking.duration_minutes} minutes</Text>
+            <Text style={[styles.paymentStatus, styles[`payment_${booking.payment_status}`]]}>
+              {paymentStatusLabels[booking.payment_status]}
+            </Text>
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
             {!isPreview && booking.status === 'pending' && (
               <View style={styles.actions}>
@@ -216,6 +229,12 @@ const styles = StyleSheet.create({
   status_completed: { color: theme.colors.muted },
   price: { color: theme.colors.ink, fontSize: 20, fontWeight: '800', marginTop: 18 },
   meta: { color: theme.colors.muted, marginTop: 4 },
+  paymentStatus: { fontSize: 11, fontWeight: '800', letterSpacing: 0.7, marginTop: 12 },
+  payment_unpaid: { color: theme.colors.accent },
+  payment_pending: { color: theme.colors.accent },
+  payment_paid: { color: '#067647' },
+  payment_failed: { color: '#B42318' },
+  payment_refunded: { color: theme.colors.muted },
   note: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 14 },
   emptyCard: {
     backgroundColor: theme.colors.white,
