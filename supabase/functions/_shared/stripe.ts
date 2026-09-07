@@ -1,4 +1,4 @@
-export async function stripeRequest(path: string, params: URLSearchParams) {
+export async function stripeRequest(path: string, params: URLSearchParams, idempotencyKey?: string) {
   const secretKey = Deno.env.get('STRIPE_SECRET_KEY');
   if (!secretKey) {
     throw new Error('STRIPE_SECRET_KEY is not configured.');
@@ -9,6 +9,7 @@ export async function stripeRequest(path: string, params: URLSearchParams) {
     headers: {
       Authorization: `Basic ${btoa(`${secretKey}:`)}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
     },
     body: params,
   });

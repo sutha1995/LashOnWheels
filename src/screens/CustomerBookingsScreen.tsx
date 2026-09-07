@@ -162,7 +162,7 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
             <Text style={[styles.paymentStatus, styles[`payment_${booking.payment_status}`]]}>
               {paymentStatusLabels[booking.payment_status]}
             </Text>
-            {booking.status === 'confirmed' && booking.payment_status !== 'paid' && (
+            {booking.status === 'confirmed' && ['unpaid', 'failed'].includes(booking.payment_status) && (
               <>
                 <Text style={styles.paymentHint}>
                   Complete payment securely through Stripe Checkout. Card details never enter Lash On Wheels.
