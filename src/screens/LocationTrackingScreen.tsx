@@ -18,6 +18,7 @@ const previewLocation: FreelancerLocation = {
   sharing_enabled: true,
   updated_at: '2026-09-22T10:20:00Z',
 };
+const locationFreshnessMs = 2 * 60 * 1000;
 
 function formatUpdatedAt(updatedAt: string) {
   return new Date(updatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
@@ -95,6 +96,7 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
         return;
       }
       if (!silent) {
+        locationRef.current = result.location;
         setLocation(result.location);
         setIsSharing(false);
       }
@@ -138,6 +140,7 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
       if (result.error) {
         setError(result.error.message);
       } else {
+        locationRef.current = result.location;
         setLocation(result.location);
         setIsSharing(result.location?.sharing_enabled ?? false);
       }
@@ -154,11 +157,23 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState) => {
       if (nextState !== 'active') {
-        void stopSharing(true);
+        void stopSharing();
       }
     });
     return () => subscription.remove();
   }, [stopSharing]);
+
+  useEffect(() => {
+    if (isPreview || isFreelancerMode || !location?.sharing_enabled) {
+      return;
+    }
+    const expiresIn = Math.max(0, new Date(location.updated_at).getTime() + locationFreshnessMs - Date.now());
+    const timeout = setTimeout(() => {
+      setLocation(null);
+      setIsSharing(false);
+    }, expiresIn);
+    return () => clearTimeout(timeout);
+  }, [isFreelancerMode, isPreview, location]);
 
   const updateLocation = async (position: Location.LocationObject, generation: number) => {
     if (!supabase || !bookingId || generation !== sharingGeneration.current) {
@@ -184,6 +199,7 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
       setError(result.error.message);
       return false;
     }
+    locationRef.current = result.location;
     setLocation(result.location);
     return true;
   };
