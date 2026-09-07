@@ -7,6 +7,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import logo from './assets/lash-on-wheels-logo.png';
 import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
+import { AdminBookingsScreen } from './src/screens/AdminBookingsScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { CustomerBookingsScreen } from './src/screens/CustomerBookingsScreen';
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   FreelancerAvailability: { preview?: boolean } | undefined;
   FreelancerBookings: { preview?: boolean } | undefined;
   Admin: { role: 'admin'; preview?: boolean };
+  AdminBookings: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -155,6 +157,7 @@ export default function App() {
           options={{ title: 'Booking inbox' }}
         />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
+        <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} options={{ title: 'All bookings' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
