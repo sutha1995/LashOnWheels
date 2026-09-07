@@ -92,9 +92,6 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.secondaryButtonText}>View notifications</Text>
           </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerBookings')}>
-            <Text style={styles.secondaryButtonText}>Manage booking travel</Text>
-          </Pressable>
         </View>
       )}
       {role === 'admin' && (

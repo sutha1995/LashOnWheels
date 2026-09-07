@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as Location from 'expo-location';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
@@ -33,6 +33,74 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
   const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState('');
   const subscription = useRef<Location.LocationSubscription | null>(null);
+  const locationRef = useRef<FreelancerLocation | null>(null);
+  const sharingGeneration = useRef(0);
+  const writeQueue = useRef(Promise.resolve());
+
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
+
+  const queueWrite = useCallback(<T,>(operation: () => Promise<T>) => {
+    const result = writeQueue.current.then(operation, operation);
+    writeQueue.current = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
+  }, []);
+
+  const stopSharing = useCallback(
+    async (silent = false) => {
+      const generation = ++sharingGeneration.current;
+      subscription.current?.remove();
+      subscription.current = null;
+      if (!supabase || !bookingId || !isFreelancerMode) {
+        if (!silent) {
+          setIsSharing(false);
+        }
+        return;
+      }
+
+      const { data } = await supabase.auth.getUser();
+      if (!data.user) {
+        if (!silent) {
+          navigation.replace('Welcome');
+        }
+        return;
+      }
+      const currentLocation = locationRef.current;
+      if (!currentLocation) {
+        if (!silent) {
+          setIsSharing(false);
+        }
+        return;
+      }
+
+      const result = await queueWrite(() =>
+        saveFreelancerLocation(bookingId, data.user.id, {
+          latitude: currentLocation.latitude,
+          longitude: currentLocation.longitude,
+          accuracy_meters: currentLocation.accuracy_meters,
+          sharing_enabled: false,
+        }),
+      );
+      if (generation !== sharingGeneration.current) {
+        return;
+      }
+      if (result.error) {
+        if (!silent) {
+          setError(result.error.message);
+        }
+        return;
+      }
+      if (!silent) {
+        setLocation(result.location);
+        setIsSharing(false);
+      }
+    },
+    [bookingId, isFreelancerMode, navigation, queueWrite],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -79,82 +147,81 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
     void loadLocation();
     return () => {
       isMounted = false;
-      subscription.current?.remove();
-      subscription.current = null;
+      void stopSharing(true);
     };
-  }, [isPreview, navigation, trackedFreelancerId]);
+  }, [bookingId, isPreview, navigation, stopSharing, trackedFreelancerId]);
 
-  const updateLocation = async (position: Location.LocationObject) => {
-    if (!supabase) {
-      return;
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') {
+        void stopSharing(true);
+      }
+    });
+    return () => subscription.remove();
+  }, [stopSharing]);
+
+  const updateLocation = async (position: Location.LocationObject, generation: number) => {
+    if (!supabase || !bookingId || generation !== sharingGeneration.current) {
+      return false;
     }
     const { data } = await supabase.auth.getUser();
-    if (!data.user || !bookingId) {
-      return;
+    if (!data.user || generation !== sharingGeneration.current) {
+      return false;
     }
 
-    const result = await saveFreelancerLocation(bookingId, data.user.id, {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-      accuracy_meters: position.coords.accuracy,
-      sharing_enabled: true,
-    });
+    const result = await queueWrite(() =>
+      saveFreelancerLocation(bookingId, data.user.id, {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy_meters: position.coords.accuracy,
+        sharing_enabled: true,
+      }),
+    );
+    if (generation !== sharingGeneration.current) {
+      return false;
+    }
     if (result.error) {
       setError(result.error.message);
-      return;
+      return false;
     }
     setLocation(result.location);
+    return true;
   };
 
   const startSharing = async () => {
     setError('');
-    const permission = await Location.requestForegroundPermissionsAsync();
-    if (!permission.granted) {
-      setError('Location permission is required before sharing your travel position.');
-      return;
-    }
+    const generation = ++sharingGeneration.current;
+    try {
+      const permission = await Location.requestForegroundPermissionsAsync();
+      if (!permission.granted) {
+        setError('Location permission is required before sharing your travel position.');
+        return;
+      }
 
-    const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-    await updateLocation(position);
-    subscription.current?.remove();
-    subscription.current = await Location.watchPositionAsync(
-      { accuracy: Location.Accuracy.Balanced, distanceInterval: 50, timeInterval: 30000 },
-      (nextPosition) => {
-        void updateLocation(nextPosition);
-      },
-    );
-    setIsSharing(true);
-  };
-
-  const stopSharing = async () => {
-    setError('');
-    subscription.current?.remove();
-    subscription.current = null;
-    if (!supabase) {
-      return;
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      if (!(await updateLocation(position, generation))) {
+        return;
+      }
+      subscription.current?.remove();
+      subscription.current = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, distanceInterval: 50, timeInterval: 30000 },
+        (nextPosition) => {
+          void updateLocation(nextPosition, generation);
+        },
+      );
+      if (generation === sharingGeneration.current) {
+        setIsSharing(true);
+      } else {
+        subscription.current.remove();
+        subscription.current = null;
+      }
+    } catch (caughtError) {
+      if (generation === sharingGeneration.current) {
+        await stopSharing(true);
+        setError(caughtError instanceof Error ? caughtError.message : 'Unable to start location sharing.');
+        setIsSharing(false);
+      }
     }
-    const { data } = await supabase.auth.getUser();
-    if (!data.user || !bookingId) {
-      navigation.replace('Welcome');
-      return;
-    }
-    const currentLocation = location;
-    if (!currentLocation) {
-      setIsSharing(false);
-      return;
-    }
-    const result = await saveFreelancerLocation(bookingId, data.user.id, {
-      latitude: currentLocation.latitude,
-      longitude: currentLocation.longitude,
-      accuracy_meters: currentLocation.accuracy_meters,
-      sharing_enabled: false,
-    });
-    if (result.error) {
-      setError(result.error.message);
-      return;
-    }
-    setLocation(result.location);
-    setIsSharing(false);
   };
 
   if (isLoading) {
