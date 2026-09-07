@@ -34,6 +34,12 @@ function formatCreatedAt(createdAt: string) {
   return new Date(createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+function mergeMessages(current: BookingMessage[], incoming: BookingMessage[]) {
+  const merged = new Map(current.map((message) => [message.id, message]));
+  incoming.forEach((message) => merged.set(message.id, message));
+  return [...merged.values()].sort((left, right) => left.created_at.localeCompare(right.created_at));
+}
+
 export function BookingChatScreen({ navigation, route }: Props) {
   const isPreview = route.params?.preview ?? false;
   const [messages, setMessages] = useState<BookingMessage[]>([]);
@@ -74,11 +80,8 @@ export function BookingChatScreen({ navigation, route }: Props) {
       if (result.error) {
         setLoadError(result.error.message);
       } else {
-        setMessages((current) => {
-          const merged = new Map(current.map((message) => [message.id, message]));
-          result.messages.forEach((message) => merged.set(message.id, message));
-          return [...merged.values()].sort((left, right) => left.created_at.localeCompare(right.created_at));
-        });
+        setLoadError('');
+        setMessages((current) => mergeMessages(current, result.messages));
       }
       setIsLoading(false);
     };
@@ -116,7 +119,7 @@ export function BookingChatScreen({ navigation, route }: Props) {
       setSendError(result.error?.message ?? 'Unable to send this message.');
       return;
     }
-    setMessages((current) => [...current, result.message!]);
+    setMessages((current) => mergeMessages(current, [result.message!]));
     setDraft('');
   };
 
