@@ -3,7 +3,12 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
-import { getBookingMessages, sendBookingMessage, type BookingMessage } from '../lib/chat';
+import {
+  getBookingMessageValidationError,
+  getBookingMessages,
+  sendBookingMessage,
+  type BookingMessage,
+} from '../lib/chat';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BookingChat'>;
@@ -69,12 +74,25 @@ export function BookingChatScreen({ navigation, route }: Props) {
       if (result.error) {
         setLoadError(result.error.message);
       } else {
-        setMessages(result.messages);
+        setMessages((current) => {
+          const merged = new Map(current.map((message) => [message.id, message]));
+          result.messages.forEach((message) => merged.set(message.id, message));
+          return [...merged.values()].sort((left, right) => left.created_at.localeCompare(right.created_at));
+        });
       }
       setIsLoading(false);
     };
 
     void loadMessages();
+    if (!isPreview) {
+      const refreshInterval = setInterval(() => {
+        void loadMessages();
+      }, 5000);
+      return () => {
+        isMounted = false;
+        clearInterval(refreshInterval);
+      };
+    }
     return () => {
       isMounted = false;
     };
@@ -83,6 +101,11 @@ export function BookingChatScreen({ navigation, route }: Props) {
   const handleSend = async () => {
     const body = draft.trim();
     if (!body || isPreview || isSending) {
+      return;
+    }
+    const validationError = getBookingMessageValidationError(body);
+    if (validationError) {
+      setSendError(validationError);
       return;
     }
     setSendError('');
