@@ -4,56 +4,15 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { createBooking, getMarketplaceServices, type MarketplaceService } from '../lib/bookings';
+import { addMinutesToTime, formatDateKey, getTomorrowDateKey, isValidDate, isValidTime } from '../lib/datetime';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CustomerBooking'>;
 
-function getTomorrow() {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const year = tomorrow.getFullYear();
-  const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-  const day = String(tomorrow.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function isValidDate(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return false;
-  }
-  const date = new Date(`${value}T00:00:00Z`);
-  return (
-    !Number.isNaN(date.getTime()) &&
-    date.getUTCFullYear() === Number(value.slice(0, 4)) &&
-    date.getUTCMonth() + 1 === Number(value.slice(5, 7)) &&
-    date.getUTCDate() === Number(value.slice(8, 10))
-  );
-}
-
-function isValidTime(value: string) {
-  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
-}
-
-function getLocalDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-function addMinutes(time: string, minutes: number) {
-  const [hours, mins] = time.split(':').map(Number);
-  const totalMinutes = hours * 60 + mins + minutes;
-  if (totalMinutes >= 24 * 60) {
-    return '23:59';
-  }
-  return `${String(Math.floor(totalMinutes / 60)).padStart(2, '0')}:${String(totalMinutes % 60).padStart(2, '0')}`;
-}
-
-export function CustomerBookingScreen({ navigation }: Props) {
+export function CustomerBookingScreen({ navigation, route }: Props) {
   const [services, setServices] = useState<MarketplaceService[]>([]);
   const [selectedServiceId, setSelectedServiceId] = useState('');
-  const [scheduledDate, setScheduledDate] = useState(getTomorrow);
+  const [scheduledDate, setScheduledDate] = useState(getTomorrowDateKey);
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
   const [customerNote, setCustomerNote] = useState('');
@@ -76,9 +35,13 @@ export function CustomerBookingScreen({ navigation }: Props) {
         setError(result.error.message);
       } else {
         setServices(result.services);
-        setSelectedServiceId(result.services[0]?.id ?? '');
-        if (result.services[0]) {
-          setEndTime(addMinutes(startTime, result.services[0].duration_minutes));
+        const preselected = result.services.find(
+          (service) => service.id === route.params?.preselectedServiceId,
+        );
+        const initialService = preselected ?? result.services[0];
+        setSelectedServiceId(initialService?.id ?? '');
+        if (initialService) {
+          setEndTime(addMinutesToTime(startTime, initialService.duration_minutes));
         }
       }
       setIsLoading(false);
@@ -87,7 +50,7 @@ export function CustomerBookingScreen({ navigation }: Props) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [route.params?.preselectedServiceId]);
 
   const selectedService = useMemo(
     () => services.find((service) => service.id === selectedServiceId),
@@ -96,7 +59,7 @@ export function CustomerBookingScreen({ navigation }: Props) {
 
   const selectService = (service: MarketplaceService) => {
     setSelectedServiceId(service.id);
-    setEndTime(addMinutes(startTime, service.duration_minutes));
+    setEndTime(addMinutesToTime(startTime, service.duration_minutes));
   };
 
   const handleBook = async () => {
@@ -105,7 +68,7 @@ export function CustomerBookingScreen({ navigation }: Props) {
       setError('Choose a service first.');
       return;
     }
-    if (!isValidDate(scheduledDate) || scheduledDate <= getLocalDateKey(new Date())) {
+    if (!isValidDate(scheduledDate) || scheduledDate <= formatDateKey(new Date())) {
       setError('Choose a valid future date in YYYY-MM-DD format.');
       return;
     }

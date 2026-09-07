@@ -18,6 +18,9 @@ Phase 0 establishes the Expo SDK 57 + TypeScript app shell:
 - Freelancers can select catalog services and save their own prices, durations, and descriptions.
 - Freelancers can set weekly availability with per-day working hours.
 - Customers can browse active freelancer services and request bookings inside published availability.
+- Customers can search the marketplace by service, service area, and a date with time, sorted by recommendation, rating, or price.
+- Customers can view freelancer profiles with rating summaries, completed booking counts, services, and portfolio galleries.
+- Freelancers can upload a profile photo and portfolio photos. Images are stored in the public `portfolio` Supabase Storage bucket created by the portfolio migration.
 - Bookings include a protected payment-status foundation for future provider checkout integration.
 - Customers, freelancers, and admins receive in-app booking and payment notifications.
 - Freelancers can share foreground travel location for confirmed bookings with privacy-scoped customer access.
@@ -80,4 +83,4 @@ Create a Stripe webhook endpoint for `stripe-webhook` and enable:
 
 Use Stripe test keys and test cards during development. Never place Stripe secrets in Expo environment variables or commit them to the repository.
 
-Apply the freelancer profile, service catalog, availability, booking, payment-status, notification, location, review, and messaging migrations before using these flows with real accounts.
+Apply the freelancer profile, service catalog, availability, booking, payment-status, notification, location, review, messaging, marketplace summary, and portfolio migrations before using these flows with real accounts. The portfolio migration also creates the `portfolio` storage bucket with row level security policies; do not change it to a private bucket without also updating photo URL handling.

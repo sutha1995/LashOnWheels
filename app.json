@@ -20,7 +20,7 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/lash-on-wheels-logo.png"
     },
     "plugins": [
       "expo-web-browser",
@@ -28,6 +28,14 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Allow Lash On Wheels to share your location while traveling to a confirmed appointment."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Lash On Wheels to access your photos so you can showcase your work.",
+          "cameraPermission": "Allow Lash On Wheels to access your camera so you can take profile and portfolio photos.",
+          "microphonePermission": false
         }
       ]
     ]

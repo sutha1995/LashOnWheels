@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
+import { pickProfilePhotoUrl } from '../lib/portfolio';
 import { getFreelancerProfile, getProfile, saveFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
@@ -15,6 +16,8 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [serviceArea, setServiceArea] = useState('');
   const [maxTravelDistance, setMaxTravelDistance] = useState('10');
   const [travelFee, setTravelFee] = useState('0');
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [isPickingPhoto, setIsPickingPhoto] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,6 +56,7 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         setServiceArea(result.profile.service_area);
         setMaxTravelDistance(String(result.profile.max_travel_distance_km));
         setTravelFee(String(result.profile.travel_fee));
+        setProfilePhotoUrl(result.profile.profile_photo_url);
       }
       setIsLoading(false);
     });
@@ -103,6 +107,7 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       service_area: serviceArea.trim(),
       max_travel_distance_km: maxDistance,
       travel_fee: fee,
+      profile_photo_url: profilePhotoUrl,
     });
     setIsSaving(false);
     if (result.error) {
@@ -110,6 +115,31 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       return;
     }
     navigation.goBack();
+  };
+
+  const handleChoosePhoto = async () => {
+    setError('');
+    if (!supabase) {
+      setError('Connect Supabase before adding a profile photo.');
+      return;
+    }
+
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      setError('Your session has expired. Please sign in again.');
+      return;
+    }
+
+    setIsPickingPhoto(true);
+    const result = await pickProfilePhotoUrl(data.user.id);
+    setIsPickingPhoto(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+    if (result.url) {
+      setProfilePhotoUrl(result.url);
+    }
   };
 
   if (isLoading) {
@@ -124,7 +154,26 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <Text style={styles.eyebrow}>FREELANCER ONBOARDING</Text>
       <Text style={styles.title}>Tell customers about your work</Text>
-      <Text style={styles.subtitle}>You can add services, portfolio photos, and availability next.</Text>
+      <Text style={styles.subtitle}>Your photo is shown to customers when they find you in search.</Text>
+      <View style={styles.photoRow}>
+        {profilePhotoUrl ? (
+          <Image source={{ uri: profilePhotoUrl }} style={styles.profilePhoto} />
+        ) : (
+          <View style={styles.photoPlaceholder}>
+            <Text style={styles.photoPlaceholderText}>Add a photo</Text>
+          </View>
+        )}
+        <View style={styles.photoActions}>
+          <Pressable style={styles.photoButton} disabled={isPickingPhoto} onPress={() => void handleChoosePhoto()}>
+            <Text style={styles.photoButtonText}>{isPickingPhoto ? 'Uploading…' : 'Choose profile photo'}</Text>
+          </Pressable>
+          {!!profilePhotoUrl && (
+            <Pressable style={styles.photoRemoveButton} onPress={() => setProfilePhotoUrl(null)}>
+              <Text style={styles.photoRemoveButtonText}>Remove photo</Text>
+            </Pressable>
+          )}
+        </View>
+      </View>
       <TextInput
         placeholder="Professional display name"
         value={displayName}
@@ -193,6 +242,22 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   multilineInput: { minHeight: 110, textAlignVertical: 'top' },
+  photoRow: { alignItems: 'center', flexDirection: 'row', marginBottom: 14 },
+  profilePhoto: { borderRadius: 44, height: 88, width: 88 },
+  photoPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: theme.colors.blush,
+    borderRadius: 44,
+    height: 88,
+    justifyContent: 'center',
+    width: 88,
+  },
+  photoPlaceholderText: { color: theme.colors.ink, fontSize: 13, fontWeight: '700' },
+  photoActions: { flex: 1, marginLeft: 16 },
+  photoButton: { backgroundColor: theme.colors.ink, borderRadius: 12, padding: 14 },
+  photoButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
+  photoRemoveButton: { borderColor: theme.colors.border, borderRadius: 12, borderWidth: 1, marginTop: 10, padding: 12 },
+  photoRemoveButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },
   sectionLabel: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginBottom: 12, marginTop: 10 },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 8, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '700', textAlign: 'center' },

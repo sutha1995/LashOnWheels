@@ -13,11 +13,14 @@ import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { CustomerBookingsScreen } from './src/screens/CustomerBookingsScreen';
 import { CustomerReviewScreen } from './src/screens/CustomerReviewScreen';
 import { BookingChatScreen } from './src/screens/BookingChatScreen';
+import { SearchScreen } from './src/screens/SearchScreen';
+import { FreelancerProfileScreen } from './src/screens/FreelancerProfileScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
 import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
 import { FreelancerEarningsScreen } from './src/screens/FreelancerEarningsScreen';
+import { PortfolioScreen } from './src/screens/PortfolioScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
@@ -28,13 +31,16 @@ export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
   Customer: { role: 'customer'; preview?: boolean };
-  CustomerBooking: undefined;
+  Search: { serviceId?: string; preview?: boolean } | undefined;
+  FreelancerProfile: { freelancerId: string; serviceId?: string; preview?: boolean };
+  CustomerBooking: { preselectedServiceId?: string } | undefined;
   CustomerBookings: { preview?: boolean } | undefined;
   CustomerReview: { bookingId: string; serviceName: string; preview?: boolean };
   BookingChat: { bookingId: string; serviceName: string; preview?: boolean };
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
   FreelancerServices: { preview?: boolean } | undefined;
+  Portfolio: undefined;
   FreelancerAvailability: { preview?: boolean } | undefined;
   FreelancerBookings: { preview?: boolean } | undefined;
   FreelancerEarnings: { preview?: boolean } | undefined;
@@ -143,6 +149,8 @@ export default function App() {
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Welcome back' }} />
         <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
+        <Stack.Screen name="Search" component={SearchScreen} options={{ title: 'Search' }} />
+        <Stack.Screen name="FreelancerProfile" component={FreelancerProfileScreen} options={{ title: 'Freelancer profile' }} />
         <Stack.Screen name="CustomerBooking" component={CustomerBookingScreen} options={{ title: 'Book a service' }} />
         <Stack.Screen name="CustomerBookings" component={CustomerBookingsScreen} options={{ title: 'My bookings' }} />
         <Stack.Screen name="CustomerReview" component={CustomerReviewScreen} options={{ title: 'Leave a review' }} />
@@ -158,6 +166,7 @@ export default function App() {
           component={FreelancerServicesScreen}
           options={{ title: 'Services and pricing' }}
         />
+        <Stack.Screen name="Portfolio" component={PortfolioScreen} options={{ title: 'Portfolio' }} />
         <Stack.Screen
           name="FreelancerAvailability"
           component={FreelancerAvailabilityScreen}

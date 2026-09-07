@@ -69,10 +69,14 @@ export async function getFreelancerProfile(userId: string) {
   return { profile: data as FreelancerProfile | null, error };
 }
 
-export async function saveFreelancerProfile(
-  userId: string,
-  values: Omit<FreelancerProfile, 'id' | 'profile_photo_url' | 'onboarding_completed'>,
-) {
+export type FreelancerProfileValues = Omit<
+  FreelancerProfile,
+  'id' | 'onboarding_completed' | 'profile_photo_url'
+> & {
+  profile_photo_url?: string | null;
+};
+
+export async function saveFreelancerProfile(userId: string, values: FreelancerProfileValues) {
   if (!supabase) {
     return { profile: null, error: new Error('Supabase is not configured.') };
   }

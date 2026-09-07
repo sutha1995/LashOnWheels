@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
 import { getFreelancerProfile } from '../lib/profile';
+import { getServiceCatalog, type Service } from '../lib/serviceCatalog';
 import { supabase } from '../lib/supabase';
 import { signOut } from '../services/auth';
 
@@ -15,27 +16,82 @@ const copy = {
     eyebrow: 'YOUR BEAUTY, YOUR WAY',
     title: 'Find your perfect lash artist',
     body: 'Browse trusted professionals who bring salon-quality services to your door.',
-    cards: ['Lash Lift', 'Classic Extensions', 'Lash Tint'],
   },
   freelancer: {
     eyebrow: 'YOUR BUSINESS, ON THE MOVE',
     title: 'Grow your beauty business',
     body: 'Build your professional profile, then add services and availability as the marketplace grows.',
-    cards: ['Professional profile', 'Services and pricing', 'Availability'],
+    cards: [
+      { title: 'Professional profile', body: 'Tell customers what makes your work special.' },
+      { title: 'Services and pricing', body: 'Set your own prices for each lash service.' },
+      { title: 'Availability', body: 'Define weekly working hours and days off.' },
+    ],
   },
   admin: {
     eyebrow: 'PLATFORM OVERVIEW',
     title: 'Lash On Wheels control centre',
     body: 'Manage users, freelancers, services, and bookings from one place.',
-    cards: ['Verify freelancers', 'Review bookings', 'View analytics'],
+    cards: [
+      { title: 'Verify freelancers', body: 'Freelancer verification is coming soon.' },
+      { title: 'Review bookings', body: 'Inspect every appointment and its current lifecycle.' },
+      { title: 'View analytics', body: 'Platform analytics are coming soon.' },
+    ],
   },
 } as const;
 
+const previewCatalogServices: Service[] = [
+  {
+    id: 'preview-service-lash-lift',
+    name: 'Lash Lift',
+    description: 'A natural curl and lift for your lashes.',
+    duration_minutes: 60,
+    base_price: 80,
+  },
+  {
+    id: 'preview-service-lash-tint',
+    name: 'Lash Tint',
+    description: 'A rich tint to define your natural lashes.',
+    duration_minutes: 30,
+    base_price: 45,
+  },
+  {
+    id: 'preview-service-classic',
+    name: 'Classic Lash Extension',
+    description: 'Lightweight one-to-one extensions for everyday definition.',
+    duration_minutes: 120,
+    base_price: 120,
+  },
+];
+
 export function DashboardScreen({ navigation, route }: Props) {
   const [serviceAccessError, setServiceAccessError] = useState('');
+  const [catalogServices, setCatalogServices] = useState<Service[]>([]);
+  const [catalogError, setCatalogError] = useState('');
   const role = route.params?.role ?? 'customer';
   const isPreview = route.params?.preview ?? false;
   const content = copy[role];
+
+  useEffect(() => {
+    if (role !== 'customer' || isPreview || !supabase) {
+      return;
+    }
+
+    let isMounted = true;
+    void getServiceCatalog().then((result) => {
+      if (!isMounted) {
+        return;
+      }
+      if (result.error) {
+        setCatalogError(result.error.message);
+      } else {
+        setCatalogServices(result.services);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isPreview, role]);
 
   const openFreelancerServices = async () => {
     setServiceAccessError('');
@@ -70,17 +126,42 @@ export function DashboardScreen({ navigation, route }: Props) {
       <Text style={styles.title}>{content.title}</Text>
       <Text style={styles.body}>{content.body}</Text>
       <View style={styles.section}>
-        {content.cards.map((card, index) => (
-          <View key={card} style={styles.card}>
-            <Text style={styles.cardNumber}>0{index + 1}</Text>
-            <Text style={styles.cardTitle}>{card}</Text>
-            <Text style={styles.cardBody}>
-              {route.params?.role === 'freelancer' && index === 0
-                ? 'Tell customers what makes your work special.'
-                : `Ready for Phase ${index + 1} implementation.`}
-            </Text>
-          </View>
-        ))}
+        {role === 'freelancer' &&
+          copy.freelancer.cards.map((card) => (
+            <View key={card.title} style={styles.card}>
+              <Text style={styles.cardTitle}>{card.title}</Text>
+              <Text style={styles.cardBody}>{card.body}</Text>
+            </View>
+          ))}
+        {role === 'admin' &&
+          copy.admin.cards.map((card) => (
+            <View key={card.title} style={styles.card}>
+              <Text style={styles.cardTitle}>{card.title}</Text>
+              <Text style={styles.cardBody}>{card.body}</Text>
+            </View>
+          ))}
+        {role === 'customer' && (
+          <>
+            {(isPreview ? previewCatalogServices : catalogServices).map((service) => (
+              <Pressable
+                key={service.id}
+                style={styles.card}
+                onPress={() => navigation.navigate('Search', { serviceId: service.id, preview: isPreview || undefined })}
+              >
+                <Text style={styles.cardNumber}>LASH SERVICES</Text>
+                <Text style={styles.cardTitle}>{service.name}</Text>
+                <Text style={styles.cardBody}>{service.description}</Text>
+                <Text style={styles.cardPrice}>
+                  From RM{service.base_price.toFixed(2)} · {service.duration_minutes} minutes
+                </Text>
+              </Pressable>
+            ))}
+            {!!catalogError && <Text style={styles.errorText}>{catalogError}</Text>}
+            {!isPreview && !catalogServices.length && !catalogError && (
+              <Text style={styles.emptyText}>No services are published yet.</Text>
+            )}
+          </>
+        )}
       </View>
       {role === 'admin' && (
         <View style={styles.previewSection}>
@@ -116,8 +197,11 @@ export function DashboardScreen({ navigation, route }: Props) {
       )}
       {role === 'customer' && !isPreview && (
         <>
-          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
-            <Text style={styles.primaryButtonText}>Browse services and book</Text>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Search')}>
+            <Text style={styles.primaryButtonText}>Search freelancers</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
+            <Text style={styles.secondaryButtonText}>Browse all services</Text>
           </Pressable>
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('CustomerBookings')}>
             <Text style={styles.secondaryButtonText}>View my bookings</Text>
@@ -131,13 +215,16 @@ export function DashboardScreen({ navigation, route }: Props) {
         <View style={styles.previewSection}>
           <Text style={styles.previewTitle}>Preview customer tools</Text>
           <Text style={styles.previewBody}>
-            Review how booking history and status updates will appear for customers.
+            Review how search, booking history, and status updates will appear for customers.
           </Text>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Search', { preview: true })}>
+            <Text style={styles.primaryButtonText}>Preview search</Text>
+          </Pressable>
           <Pressable
-            style={styles.primaryButton}
+            style={styles.secondaryButton}
             onPress={() => navigation.navigate('CustomerBookings', { preview: true })}
           >
-            <Text style={styles.primaryButtonText}>Preview booking history</Text>
+            <Text style={styles.secondaryButtonText}>Preview booking history</Text>
           </Pressable>
         </View>
       )}
@@ -149,6 +236,9 @@ export function DashboardScreen({ navigation, route }: Props) {
           {!!serviceAccessError && <Text style={styles.errorText}>{serviceAccessError}</Text>}
           <Pressable style={styles.secondaryButton} onPress={() => void openFreelancerServices()}>
             <Text style={styles.secondaryButtonText}>Manage services and pricing</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Portfolio')}>
+            <Text style={styles.secondaryButtonText}>Manage portfolio photos</Text>
           </Pressable>
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerAvailability')}>
             <Text style={styles.secondaryButtonText}>Set availability</Text>
@@ -256,6 +346,7 @@ const styles = StyleSheet.create({
   cardNumber: { color: theme.colors.accent, fontSize: 12, fontWeight: '800' },
   cardTitle: { color: theme.colors.ink, fontSize: 18, fontWeight: '800', marginTop: 12 },
   cardBody: { color: theme.colors.muted, marginTop: 6 },
+  cardPrice: { color: theme.colors.accent, fontSize: 13, fontWeight: '700', marginTop: 10 },
   signOutButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 28, padding: 15 },
   signOutText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 24, padding: 16 },
@@ -263,4 +354,5 @@ const styles = StyleSheet.create({
   secondaryButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 12, padding: 15 },
   secondaryButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
   errorText: { color: '#B42318', fontSize: 13, marginTop: 12, textAlign: 'center' },
+  emptyText: { color: theme.colors.muted, marginTop: 12, textAlign: 'center' },
 });
