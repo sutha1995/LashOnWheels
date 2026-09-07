@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { getFreelancerBookings, updateBookingStatus, type Booking } from '../lib/bookings';
+import { getFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FreelancerBookings'>;
@@ -71,6 +72,19 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
     void supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
         navigation.replace('Welcome');
+        return;
+      }
+      const profileResult = await getFreelancerProfile(data.user.id);
+      if (!isMounted) {
+        return;
+      }
+      if (profileResult.error) {
+        setError(profileResult.error.message);
+        setIsLoading(false);
+        return;
+      }
+      if (!profileResult.profile || !profileResult.profile.onboarding_completed) {
+        navigation.replace('FreelancerOnboarding');
         return;
       }
       const result = await getFreelancerBookings(data.user.id);
