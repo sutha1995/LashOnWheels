@@ -25,8 +25,9 @@ Deno.serve(async (request) => {
     const event = JSON.parse(payload);
     const session = event.data?.object;
     const bookingId = session?.metadata?.booking_id;
-    const claimToken = session?.metadata?.checkout_claim_token;
-    if (typeof bookingId !== 'string' || typeof claimToken !== 'string') {
+    const metadataClaimToken = session?.metadata?.checkout_claim_token;
+    const claimToken = typeof metadataClaimToken === 'string' ? metadataClaimToken : null;
+    if (typeof bookingId !== 'string') {
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
