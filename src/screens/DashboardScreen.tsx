@@ -103,9 +103,28 @@ export function DashboardScreen({ navigation, route }: Props) {
         </View>
       )}
       {role === 'customer' && !isPreview && (
-        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
-          <Text style={styles.primaryButtonText}>Browse services and book</Text>
-        </Pressable>
+        <>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
+            <Text style={styles.primaryButtonText}>Browse services and book</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('CustomerBookings')}>
+            <Text style={styles.secondaryButtonText}>View my bookings</Text>
+          </Pressable>
+        </>
+      )}
+      {role === 'customer' && isPreview && (
+        <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>Preview customer tools</Text>
+          <Text style={styles.previewBody}>
+            Review how booking history and status updates will appear for customers.
+          </Text>
+          <Pressable
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('CustomerBookings', { preview: true })}
+          >
+            <Text style={styles.primaryButtonText}>Preview booking history</Text>
+          </Pressable>
+        </View>
       )}
       {role === 'freelancer' && !isPreview && (
         <>
