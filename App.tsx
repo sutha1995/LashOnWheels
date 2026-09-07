@@ -7,12 +7,16 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import logo from './assets/lash-on-wheels-logo.png';
 import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
+import { AdminBookingsScreen } from './src/screens/AdminBookingsScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
+import { CustomerBookingsScreen } from './src/screens/CustomerBookingsScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
 import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
+import { NotificationsScreen } from './src/screens/NotificationsScreen';
+import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
@@ -22,12 +26,16 @@ export type RootStackParamList = {
   Auth: undefined;
   Customer: { role: 'customer'; preview?: boolean };
   CustomerBooking: undefined;
+  CustomerBookings: { preview?: boolean } | undefined;
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
   FreelancerServices: { preview?: boolean } | undefined;
   FreelancerAvailability: { preview?: boolean } | undefined;
   FreelancerBookings: { preview?: boolean } | undefined;
   Admin: { role: 'admin'; preview?: boolean };
+  AdminBookings: undefined;
+  Notifications: { preview?: boolean } | undefined;
+  LocationTracking: { bookingId?: string; freelancerId?: string; preview?: boolean } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -130,6 +138,7 @@ export default function App() {
         <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Welcome back' }} />
         <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
         <Stack.Screen name="CustomerBooking" component={CustomerBookingScreen} options={{ title: 'Book a service' }} />
+        <Stack.Screen name="CustomerBookings" component={CustomerBookingsScreen} options={{ title: 'My bookings' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
         <Stack.Screen
           name="FreelancerOnboarding"
@@ -152,6 +161,13 @@ export default function App() {
           options={{ title: 'Booking inbox' }}
         />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
+        <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} options={{ title: 'All bookings' }} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
+        <Stack.Screen
+          name="LocationTracking"
+          component={LocationTrackingScreen}
+          options={{ title: 'Travel tracking' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

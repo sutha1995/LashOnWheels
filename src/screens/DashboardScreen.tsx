@@ -84,6 +84,18 @@ export function DashboardScreen({ navigation, route }: Props) {
       </View>
       {role === 'admin' && (
         <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>Booking oversight</Text>
+          <Text style={styles.previewBody}>Review every customer appointment and its current lifecycle status.</Text>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('AdminBookings')}>
+            <Text style={styles.primaryButtonText}>Review all bookings</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.secondaryButtonText}>View notifications</Text>
+          </Pressable>
+        </View>
+      )}
+      {role === 'admin' && (
+        <View style={styles.previewSection}>
           <Text style={styles.previewTitle}>Preview customer and freelancer experiences</Text>
           <Text style={styles.previewBody}>
             These read-only previews do not change your admin permissions or grant access to protected data.
@@ -103,9 +115,31 @@ export function DashboardScreen({ navigation, route }: Props) {
         </View>
       )}
       {role === 'customer' && !isPreview && (
-        <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
-          <Text style={styles.primaryButtonText}>Browse services and book</Text>
-        </Pressable>
+        <>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
+            <Text style={styles.primaryButtonText}>Browse services and book</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('CustomerBookings')}>
+            <Text style={styles.secondaryButtonText}>View my bookings</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.secondaryButtonText}>View notifications</Text>
+          </Pressable>
+        </>
+      )}
+      {role === 'customer' && isPreview && (
+        <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>Preview customer tools</Text>
+          <Text style={styles.previewBody}>
+            Review how booking history and status updates will appear for customers.
+          </Text>
+          <Pressable
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('CustomerBookings', { preview: true })}
+          >
+            <Text style={styles.primaryButtonText}>Preview booking history</Text>
+          </Pressable>
+        </View>
       )}
       {role === 'freelancer' && !isPreview && (
         <>
@@ -121,6 +155,9 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerBookings')}>
             <Text style={styles.secondaryButtonText}>Manage bookings</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.secondaryButtonText}>View notifications</Text>
           </Pressable>
         </>
       )}
@@ -147,6 +184,18 @@ export function DashboardScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate('FreelancerBookings', { preview: true })}
           >
             <Text style={styles.secondaryButtonText}>Preview booking inbox</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Notifications', { preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview notifications</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('LocationTracking', { preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview travel tracking</Text>
           </Pressable>
         </View>
       )}
