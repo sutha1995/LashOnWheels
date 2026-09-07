@@ -42,6 +42,22 @@ const previewBookings: Booking[] = [
     payment_status: 'pending',
     created_at: '2026-09-01T08:15:00Z',
   },
+  {
+    id: 'preview-3',
+    customer_id: 'preview-customer-3',
+    freelancer_id: 'preview-freelancer',
+    freelancer_service_id: 'preview-service-1',
+    scheduled_date: '2026-09-10',
+    start_time: '16:00',
+    end_time: '17:00',
+    service_name: 'Lash Lift',
+    price: 120,
+    duration_minutes: 60,
+    customer_note: '',
+    status: 'completed',
+    payment_status: 'paid',
+    created_at: '2026-09-01T08:30:00Z',
+  },
 ];
 
 const statusLabels: Record<Booking['status'], string> = {
@@ -114,7 +130,10 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
     };
   }, [isPreview, navigation]);
 
-  const handleStatusChange = async (bookingId: string, action: 'confirm_booking' | 'reject_booking') => {
+  const handleStatusChange = async (
+    bookingId: string,
+    action: 'confirm_booking' | 'reject_booking' | 'complete_booking',
+  ) => {
     setError('');
     if (!supabase) {
       setError('Connect Supabase before updating bookings.');
@@ -192,17 +211,30 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
               </View>
             )}
             {booking.status === 'confirmed' && (
-              <Pressable
-                style={styles.secondaryButton}
-                onPress={() =>
-                  navigation.navigate('LocationTracking', {
-                    bookingId: booking.id,
-                    ...(isPreview ? { preview: true } : {}),
-                  })
-                }
-              >
-                <Text style={styles.secondaryButtonText}>Share travel location</Text>
-              </Pressable>
+              <>
+                <Pressable
+                  style={styles.secondaryButton}
+                  onPress={() =>
+                    navigation.navigate('LocationTracking', {
+                      bookingId: booking.id,
+                      ...(isPreview ? { preview: true } : {}),
+                    })
+                  }
+                >
+                  <Text style={styles.secondaryButtonText}>Share travel location</Text>
+                </Pressable>
+                {!isPreview && (
+                  <Pressable
+                    style={styles.primaryButton}
+                    disabled={updatingBookingId === booking.id}
+                    onPress={() => void handleStatusChange(booking.id, 'complete_booking')}
+                  >
+                    <Text style={styles.primaryButtonText}>
+                      {updatingBookingId === booking.id ? 'Updating…' : 'Mark completed'}
+                    </Text>
+                  </Pressable>
+                )}
+              </>
             )}
           </View>
         ))
