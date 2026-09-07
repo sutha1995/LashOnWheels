@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
-import { getFreelancerBookings, type Booking } from '../lib/bookings';
+import { getFreelancerEarningsBookings, type Booking } from '../lib/bookings';
 import { summarizeEarnings } from '../lib/earnings';
 import { getFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
@@ -42,6 +42,38 @@ const previewBookings: Booking[] = [
     status: 'completed',
     payment_status: 'pending',
     created_at: '2026-08-20T08:00:00Z',
+  },
+  {
+    id: 'preview-earnings-3',
+    customer_id: 'preview-customer-3',
+    freelancer_id: 'preview-freelancer',
+    freelancer_service_id: 'preview-service-3',
+    scheduled_date: '2026-08-30',
+    start_time: '09:00',
+    end_time: '10:00',
+    service_name: 'Classic Set',
+    price: 150,
+    duration_minutes: 60,
+    customer_note: '',
+    status: 'completed',
+    payment_status: 'failed',
+    created_at: '2026-08-21T08:00:00Z',
+  },
+  {
+    id: 'preview-earnings-4',
+    customer_id: 'preview-customer-4',
+    freelancer_id: 'preview-freelancer',
+    freelancer_service_id: 'preview-service-4',
+    scheduled_date: '2026-08-31',
+    start_time: '11:00',
+    end_time: '12:00',
+    service_name: 'Volume Set',
+    price: 180,
+    duration_minutes: 60,
+    customer_note: '',
+    status: 'completed',
+    payment_status: 'refunded',
+    created_at: '2026-08-22T08:00:00Z',
   },
 ];
 
@@ -82,7 +114,7 @@ export function FreelancerEarningsScreen({ navigation, route }: Props) {
         navigation.replace('FreelancerOnboarding');
         return;
       }
-      const result = await getFreelancerBookings(data.user.id);
+      const result = await getFreelancerEarningsBookings(data.user.id);
       if (!isMounted) {
         return;
       }
@@ -129,12 +161,32 @@ export function FreelancerEarningsScreen({ navigation, route }: Props) {
           {summary.paidBookingCount} paid appointment{summary.paidBookingCount === 1 ? '' : 's'}
         </Text>
       </View>
-      {summary.completedUnpaidCount > 0 && (
+      {summary.pendingBookingCount > 0 && (
         <View style={styles.pendingCard}>
           <Text style={styles.pendingTitle}>Payment still pending</Text>
           <Text style={styles.pendingBody}>
-            {summary.completedUnpaidCount} completed appointment{summary.completedUnpaidCount === 1 ? '' : 's'} totaling
-            RM{summary.completedUnpaidTotal.toFixed(2)} are not included until payment is confirmed.
+            {summary.pendingBookingCount} completed appointment{summary.pendingBookingCount === 1 ? '' : 's'} totaling
+            RM
+            {summary.pendingTotal.toFixed(2)} are not included until payment is confirmed.
+          </Text>
+        </View>
+      )}
+      {summary.failedBookingCount > 0 && (
+        <View style={styles.pendingCard}>
+          <Text style={styles.failedTitle}>Payment failed</Text>
+          <Text style={styles.pendingBody}>
+            {summary.failedBookingCount} completed appointment{summary.failedBookingCount === 1 ? '' : 's'} totaling RM
+            {summary.failedTotal.toFixed(2)} require a separate payment resolution.
+          </Text>
+        </View>
+      )}
+      {summary.refundedBookingCount > 0 && (
+        <View style={styles.pendingCard}>
+          <Text style={styles.refundedTitle}>Payment refunded</Text>
+          <Text style={styles.pendingBody}>
+            {summary.refundedBookingCount} completed appointment{summary.refundedBookingCount === 1 ? '' : 's'} totaling
+            RM
+            {summary.refundedTotal.toFixed(2)} are excluded from paid earnings.
           </Text>
         </View>
       )}
@@ -184,6 +236,8 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   pendingTitle: { color: theme.colors.accent, fontSize: 16, fontWeight: '800' },
+  failedTitle: { color: '#B54708', fontSize: 16, fontWeight: '800' },
+  refundedTitle: { color: '#B42318', fontSize: 16, fontWeight: '800' },
   pendingBody: { color: theme.colors.muted, lineHeight: 20, marginTop: 6 },
   sectionTitle: { color: theme.colors.ink, fontSize: 20, fontWeight: '800', marginTop: 28 },
   emptyText: { color: theme.colors.muted, marginTop: 12 },
