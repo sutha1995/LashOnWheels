@@ -218,6 +218,20 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
                 <Text style={styles.secondaryButtonText}>Leave a review</Text>
               </Pressable>
             )}
+            {booking.status !== 'cancelled' && (
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() =>
+                  navigation.navigate('BookingChat', {
+                    bookingId: booking.id,
+                    serviceName: booking.service_name,
+                    ...(isPreview ? { preview: true } : {}),
+                  })
+                }
+              >
+                <Text style={styles.secondaryButtonText}>Open booking chat</Text>
+              </Pressable>
+            )}
           </View>
         ))
       ) : null}
