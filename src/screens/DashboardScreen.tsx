@@ -119,6 +119,9 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerAvailability')}>
             <Text style={styles.secondaryButtonText}>Set availability</Text>
           </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerBookings')}>
+            <Text style={styles.secondaryButtonText}>Manage bookings</Text>
+          </Pressable>
         </>
       )}
       {role === 'freelancer' && isPreview && (
@@ -138,6 +141,12 @@ export function DashboardScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate('FreelancerAvailability', { preview: true })}
           >
             <Text style={styles.secondaryButtonText}>Preview availability</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('FreelancerBookings', { preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview booking inbox</Text>
           </Pressable>
         </View>
       )}
