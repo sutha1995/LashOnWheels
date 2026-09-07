@@ -204,6 +204,20 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
                 <Text style={styles.secondaryButtonText}>Track travel status</Text>
               </Pressable>
             )}
+            {booking.status === 'completed' && (
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() =>
+                  navigation.navigate('CustomerReview', {
+                    bookingId: booking.id,
+                    serviceName: booking.service_name,
+                    ...(isPreview ? { preview: true } : {}),
+                  })
+                }
+              >
+                <Text style={styles.secondaryButtonText}>Leave a review</Text>
+              </Pressable>
+            )}
           </View>
         ))
       ) : null}

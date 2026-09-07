@@ -8,6 +8,8 @@ export type FreelancerLocation = {
   accuracy_meters: number | null;
   sharing_enabled: boolean;
   updated_at: string;
+  expires_at?: string;
+  server_now?: string;
 };
 
 export async function getFreelancerLocation(bookingId: string) {
@@ -15,11 +17,7 @@ export async function getFreelancerLocation(bookingId: string) {
     return { location: null, error: new Error('Supabase is not configured.') };
   }
 
-  const { data, error } = await supabase
-    .from('freelancer_locations')
-    .select('booking_id, freelancer_id, latitude, longitude, accuracy_meters, sharing_enabled, updated_at')
-    .eq('booking_id', bookingId)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('get_freelancer_location', { p_booking_id: bookingId }).maybeSingle();
 
   return { location: data as FreelancerLocation | null, error };
 }

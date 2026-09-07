@@ -11,6 +11,7 @@ import { AdminBookingsScreen } from './src/screens/AdminBookingsScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { CustomerBookingsScreen } from './src/screens/CustomerBookingsScreen';
+import { CustomerReviewScreen } from './src/screens/CustomerReviewScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   Customer: { role: 'customer'; preview?: boolean };
   CustomerBooking: undefined;
   CustomerBookings: { preview?: boolean } | undefined;
+  CustomerReview: { bookingId: string; serviceName: string; preview?: boolean };
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
   FreelancerServices: { preview?: boolean } | undefined;
@@ -139,6 +141,7 @@ export default function App() {
         <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
         <Stack.Screen name="CustomerBooking" component={CustomerBookingScreen} options={{ title: 'Book a service' }} />
         <Stack.Screen name="CustomerBookings" component={CustomerBookingsScreen} options={{ title: 'My bookings' }} />
+        <Stack.Screen name="CustomerReview" component={CustomerReviewScreen} options={{ title: 'Leave a review' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
         <Stack.Screen
           name="FreelancerOnboarding"
