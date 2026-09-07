@@ -17,6 +17,7 @@ import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingSc
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
 import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
+import { FreelancerEarningsScreen } from './src/screens/FreelancerEarningsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
@@ -36,6 +37,7 @@ export type RootStackParamList = {
   FreelancerServices: { preview?: boolean } | undefined;
   FreelancerAvailability: { preview?: boolean } | undefined;
   FreelancerBookings: { preview?: boolean } | undefined;
+  FreelancerEarnings: { preview?: boolean } | undefined;
   Admin: { role: 'admin'; preview?: boolean };
   AdminBookings: undefined;
   Notifications: { preview?: boolean } | undefined;
@@ -166,6 +168,7 @@ export default function App() {
           component={FreelancerBookingsScreen}
           options={{ title: 'Booking inbox' }}
         />
+        <Stack.Screen name="FreelancerEarnings" component={FreelancerEarningsScreen} options={{ title: 'Earnings' }} />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
         <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} options={{ title: 'All bookings' }} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
