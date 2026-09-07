@@ -19,7 +19,7 @@ const contactSharingPatterns = [
 ];
 const formattedPhonePattern =
   /(?:\+\d[\d\s().-]{6,}\d|\(\d{3}\)[\s.-]?\d{3}[\s.-]?\d{4}|\b\d{3}[\s.-]\d{3}[\s.-]\d{4}\b|\b\d{3}[\s.-]\d{4}\b)/;
-const unformattedPhonePattern = /\b\d{7,15}\b/;
+const unformattedPhonePattern = /(?:^|\D)\d{7,15}(?!\d)/;
 const contextualPhonePattern = /\b(?:phone|number|call|text|whatsapp|wa)\D{0,12}\d{7,15}\b/i;
 
 export function getBookingMessageValidationError(body: string) {
