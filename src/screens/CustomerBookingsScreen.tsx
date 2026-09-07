@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import * as Linking from 'expo-linking';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
-import { cancelBooking, getCustomerBookings, type Booking } from '../lib/bookings';
+import { cancelBooking, createStripeCheckoutSession, getCustomerBookings, type Booking } from '../lib/bookings';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CustomerBookings'>;
@@ -65,6 +66,7 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
   const [actionError, setActionError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingBookingId, setCancellingBookingId] = useState('');
+  const [payingBookingId, setPayingBookingId] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -161,7 +163,33 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
               {paymentStatusLabels[booking.payment_status]}
             </Text>
             {booking.status === 'confirmed' && booking.payment_status !== 'paid' && (
-              <Text style={styles.paymentHint}>Online checkout will be connected in the next payment integration.</Text>
+              <>
+                <Text style={styles.paymentHint}>
+                  Complete payment securely through Stripe Checkout. Card details never enter Lash On Wheels.
+                </Text>
+                {!isPreview && (
+                  <Pressable
+                    style={styles.payButton}
+                    disabled={payingBookingId !== ''}
+                    onPress={() => {
+                      setActionError('');
+                      setPayingBookingId(booking.id);
+                      void createStripeCheckoutSession(booking.id).then(async (result) => {
+                        setPayingBookingId('');
+                        if (result.error || !result.url) {
+                          setActionError(result.error?.message ?? 'Unable to start Stripe checkout.');
+                          return;
+                        }
+                        await Linking.openURL(result.url);
+                      });
+                    }}
+                  >
+                    <Text style={styles.payButtonText}>
+                      {payingBookingId === booking.id ? 'Opening checkout…' : 'Pay securely with Stripe'}
+                    </Text>
+                  </Pressable>
+                )}
+              </>
             )}
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
             {!isPreview && (booking.status === 'pending' || booking.status === 'confirmed') && (
@@ -277,6 +305,8 @@ const styles = StyleSheet.create({
   payment_failed: { color: '#B42318' },
   payment_refunded: { color: theme.colors.muted },
   paymentHint: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginTop: 6 },
+  payButton: { backgroundColor: theme.colors.ink, borderRadius: 10, marginTop: 16, padding: 12 },
+  payButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
   note: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 14 },
   cancelButton: { borderColor: '#F1B5B0', borderRadius: 10, borderWidth: 1, marginTop: 16, padding: 12 },
   cancelButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },

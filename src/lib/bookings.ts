@@ -193,3 +193,16 @@ export async function updateBookingStatus(
   const { data, error } = await supabase.rpc(action, { p_booking_id: bookingId });
   return { booking: data as Booking | null, error };
 }
+
+export async function createStripeCheckoutSession(bookingId: string) {
+  if (!supabase) {
+    return { url: null, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase.functions.invoke('create-stripe-checkout-session', {
+    body: { bookingId },
+  });
+  const checkoutUrl =
+    data && typeof data === 'object' && 'url' in data && typeof data.url === 'string' ? data.url : null;
+  return { url: checkoutUrl, error };
+}

@@ -54,4 +54,30 @@ The auth screen includes a Supabase Google OAuth action when the public Supabase
 4. In Supabase **Authentication → URL Configuration**, add the app redirect URL. For local web development, use the URL Expo prints when the app starts.
 
 The app uses the `lashonwheels://auth/callback` scheme for native OAuth sessions.
-Never commit `.env` or service-role keys. Apply the freelancer profile, service catalog, availability, booking, payment-status, notification, and location migrations before using these flows with real accounts. Payment checkout, maps, chat, and reviews will be added in later PRD phases.
+
+## Stripe test checkout
+
+The customer booking history includes Stripe Checkout for confirmed unpaid bookings. Card details are collected by Stripe and are never stored by Lash On Wheels.
+
+Deploy the Supabase Edge Functions and configure their server-side secrets:
+
+```bash
+supabase functions deploy create-stripe-checkout-session
+supabase functions deploy stripe-webhook
+supabase secrets set \
+  STRIPE_SECRET_KEY=sk_test_... \
+  STRIPE_WEBHOOK_SECRET=whsec_... \
+  STRIPE_SUCCESS_URL=https://your-app.example/auth/callback?payment=success \
+  STRIPE_CANCEL_URL=https://your-app.example/auth/callback?payment=cancelled
+```
+
+Create a Stripe webhook endpoint for `stripe-webhook` and enable:
+
+- `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+- `checkout.session.async_payment_failed`
+- `checkout.session.expired`
+
+Use Stripe test keys and test cards during development. Never place Stripe secrets in Expo environment variables or commit them to the repository.
+
+Apply the freelancer profile, service catalog, availability, booking, payment-status, notification, location, review, and messaging migrations before using these flows with real accounts.
