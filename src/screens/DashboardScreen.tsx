@@ -89,6 +89,12 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('AdminBookings')}>
             <Text style={styles.primaryButtonText}>Review all bookings</Text>
           </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Notifications', { preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview notifications</Text>
+          </Pressable>
         </View>
       )}
       {role === 'admin' && (
@@ -118,6 +124,9 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('CustomerBookings')}>
             <Text style={styles.secondaryButtonText}>View my bookings</Text>
+          </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.secondaryButtonText}>View notifications</Text>
           </Pressable>
         </>
       )}
@@ -150,6 +159,9 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerBookings')}>
             <Text style={styles.secondaryButtonText}>Manage bookings</Text>
           </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.secondaryButtonText}>View notifications</Text>
+          </Pressable>
         </>
       )}
       {role === 'freelancer' && isPreview && (
@@ -175,6 +187,12 @@ export function DashboardScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate('FreelancerBookings', { preview: true })}
           >
             <Text style={styles.secondaryButtonText}>Preview booking inbox</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Notifications', { preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview notifications</Text>
           </Pressable>
         </View>
       )}
