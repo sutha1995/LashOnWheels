@@ -126,6 +126,22 @@ export async function getCustomerBookings(userId: string) {
   return { bookings: (data ?? []) as Booking[], error };
 }
 
+export async function getAdminBookings() {
+  if (!supabase) {
+    return { bookings: [], error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, created_at',
+    )
+    .order('scheduled_date', { ascending: true })
+    .order('start_time', { ascending: true });
+
+  return { bookings: (data ?? []) as Booking[], error };
+}
+
 export async function cancelBooking(bookingId: string) {
   if (!supabase) {
     return { booking: null, error: new Error('Supabase is not configured.') };
