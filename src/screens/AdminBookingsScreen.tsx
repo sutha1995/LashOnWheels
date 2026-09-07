@@ -16,6 +16,14 @@ const statusLabels: Record<Booking['status'], string> = {
   completed: 'COMPLETED',
 };
 
+const paymentStatusLabels: Record<Booking['payment_status'], string> = {
+  unpaid: 'PAYMENT UNPAID',
+  pending: 'PAYMENT PENDING',
+  paid: 'PAID',
+  failed: 'PAYMENT FAILED',
+  refunded: 'REFUNDED',
+};
+
 export function AdminBookingsScreen({ navigation }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState('');
@@ -119,6 +127,7 @@ export function AdminBookingsScreen({ navigation }: Props) {
             </View>
             <Text style={styles.price}>RM{booking.price.toFixed(2)}</Text>
             <Text style={styles.meta}>{booking.duration_minutes} minutes</Text>
+            <Text style={styles.meta}>Payment: {paymentStatusLabels[booking.payment_status]}</Text>
             <Text style={styles.meta}>Customer: {booking.customer_id}</Text>
             <Text style={styles.meta}>Freelancer: {booking.freelancer_id}</Text>
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
