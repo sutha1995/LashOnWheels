@@ -92,6 +92,9 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.secondaryButtonText}>View notifications</Text>
           </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerBookings')}>
+            <Text style={styles.secondaryButtonText}>Manage booking travel</Text>
+          </Pressable>
         </View>
       )}
       {role === 'admin' && (
@@ -190,6 +193,12 @@ export function DashboardScreen({ navigation, route }: Props) {
             onPress={() => navigation.navigate('Notifications', { preview: true })}
           >
             <Text style={styles.secondaryButtonText}>Preview notifications</Text>
+          </Pressable>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('LocationTracking', { preview: true })}
+          >
+            <Text style={styles.secondaryButtonText}>Preview travel tracking</Text>
           </Pressable>
         </View>
       )}

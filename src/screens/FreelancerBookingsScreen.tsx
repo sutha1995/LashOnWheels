@@ -191,6 +191,19 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
                 </Pressable>
               </View>
             )}
+            {booking.status === 'confirmed' && (
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() =>
+                  navigation.navigate('LocationTracking', {
+                    bookingId: booking.id,
+                    ...(isPreview ? { preview: true } : {}),
+                  })
+                }
+              >
+                <Text style={styles.secondaryButtonText}>Share travel location</Text>
+              </Pressable>
+            )}
           </View>
         ))
       )}
