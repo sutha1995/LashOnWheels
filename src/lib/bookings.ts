@@ -15,6 +15,9 @@ export type MarketplaceService = {
 
 export type Booking = {
   id: string;
+  customer_id: string;
+  freelancer_id: string;
+  freelancer_service_id: string;
   scheduled_date: string;
   start_time: string;
   end_time: string;
@@ -22,7 +25,8 @@ export type Booking = {
   price: number;
   duration_minutes: number;
   customer_note: string;
-  status: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  created_at: string;
 };
 
 export async function getMarketplaceServices() {
@@ -85,5 +89,31 @@ export async function createBooking(
     p_customer_note: values.customer_note,
   });
 
+  return { booking: data as Booking | null, error };
+}
+
+export async function getFreelancerBookings(userId: string) {
+  if (!supabase) {
+    return { bookings: [], error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .select(
+      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, created_at',
+    )
+    .eq('freelancer_id', userId)
+    .order('scheduled_date', { ascending: true })
+    .order('start_time', { ascending: true });
+
+  return { bookings: (data ?? []) as Booking[], error };
+}
+
+export async function updateBookingStatus(bookingId: string, action: 'confirm_booking' | 'reject_booking') {
+  if (!supabase) {
+    return { booking: null, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase.rpc(action, { p_booking_id: bookingId });
   return { booking: data as Booking | null, error };
 }

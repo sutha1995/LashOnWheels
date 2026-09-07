@@ -12,6 +12,7 @@ import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
+import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
@@ -25,6 +26,7 @@ export type RootStackParamList = {
   FreelancerOnboarding: undefined;
   FreelancerServices: { preview?: boolean } | undefined;
   FreelancerAvailability: { preview?: boolean } | undefined;
+  FreelancerBookings: { preview?: boolean } | undefined;
   Admin: { role: 'admin'; preview?: boolean };
 };
 
@@ -143,6 +145,11 @@ export default function App() {
           name="FreelancerAvailability"
           component={FreelancerAvailabilityScreen}
           options={{ title: 'Availability' }}
+        />
+        <Stack.Screen
+          name="FreelancerBookings"
+          component={FreelancerBookingsScreen}
+          options={{ title: 'Booking inbox' }}
         />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
       </Stack.Navigator>
