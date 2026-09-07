@@ -8,7 +8,11 @@ import logo from './assets/lash-on-wheels-logo.png';
 import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
+import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
+import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
+import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
+import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
@@ -16,10 +20,14 @@ import { supabase } from './src/lib/supabase';
 export type RootStackParamList = {
   Welcome: undefined;
   Auth: undefined;
-  Customer: { role: 'customer' };
-  Freelancer: { role: 'freelancer' };
+  Customer: { role: 'customer'; preview?: boolean };
+  CustomerBooking: undefined;
+  Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
-  Admin: { role: 'admin' };
+  FreelancerServices: { preview?: boolean } | undefined;
+  FreelancerAvailability: { preview?: boolean } | undefined;
+  FreelancerBookings: { preview?: boolean } | undefined;
+  Admin: { role: 'admin'; preview?: boolean };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -121,11 +129,27 @@ export default function App() {
         <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Auth" component={AuthScreen} options={{ title: 'Welcome back' }} />
         <Stack.Screen name="Customer" component={DashboardScreen} initialParams={{ role: 'customer' }} />
+        <Stack.Screen name="CustomerBooking" component={CustomerBookingScreen} options={{ title: 'Book a service' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
         <Stack.Screen
           name="FreelancerOnboarding"
           component={FreelancerOnboardingScreen}
           options={{ title: 'Your profile' }}
+        />
+        <Stack.Screen
+          name="FreelancerServices"
+          component={FreelancerServicesScreen}
+          options={{ title: 'Services and pricing' }}
+        />
+        <Stack.Screen
+          name="FreelancerAvailability"
+          component={FreelancerAvailabilityScreen}
+          options={{ title: 'Availability' }}
+        />
+        <Stack.Screen
+          name="FreelancerBookings"
+          component={FreelancerBookingsScreen}
+          options={{ title: 'Booking inbox' }}
         />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
       </Stack.Navigator>
