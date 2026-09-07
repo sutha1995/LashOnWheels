@@ -8,6 +8,30 @@ export type BookingMessage = {
   created_at: string;
 };
 
+const contactSharingPatterns = [
+  /whatsapp/i,
+  /\bwa\.me\b/i,
+  /\bcall\s+me\b/i,
+  /\btext\s+me\b/i,
+  /\bcontact\s+me\b/i,
+  /\bmessage\s+me\b/i,
+  /\bmy\s+(?:phone|number)\b/i,
+];
+
+export function getBookingMessageValidationError(body: string) {
+  const normalizedBody = body.trim();
+  if (!normalizedBody) {
+    return 'Write a message before sending.';
+  }
+  if (
+    normalizedBody.replace(/\D/g, '').length >= 7 ||
+    contactSharingPatterns.some((pattern) => pattern.test(normalizedBody))
+  ) {
+    return 'For safety, phone numbers and WhatsApp contact details must stay out of booking chat.';
+  }
+  return null;
+}
+
 export async function getBookingMessages(bookingId: string) {
   if (!supabase) {
     return { messages: [], error: new Error('Supabase is not configured.') };
@@ -25,6 +49,10 @@ export async function getBookingMessages(bookingId: string) {
 export async function sendBookingMessage(bookingId: string, body: string) {
   if (!supabase) {
     return { message: null, error: new Error('Supabase is not configured.') };
+  }
+  const validationError = getBookingMessageValidationError(body);
+  if (validationError) {
+    return { message: null, error: new Error(validationError) };
   }
 
   const { data, error } = await supabase
