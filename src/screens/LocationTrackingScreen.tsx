@@ -32,7 +32,7 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSharing, setIsSharing] = useState(false);
   const [error, setError] = useState('');
-  const [locationRequestDurationMs, setLocationRequestDurationMs] = useState<number | null>(null);
+  const [estimatedInboundLatencyMs, setEstimatedInboundLatencyMs] = useState<number | null>(null);
   const subscription = useRef<Location.LocationSubscription | null>(null);
   const locationRef = useRef<FreelancerLocation | null>(null);
   const sharingGeneration = useRef(0);
@@ -134,13 +134,13 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
         setIsLoading(false);
         return;
       }
-      const requestStartedAt = Date.now();
+      const requestStartedAt = performance.now();
       const result = await getFreelancerLocation(bookingId);
-      const requestDurationMs = Math.max(0, Date.now() - requestStartedAt);
+      const requestDurationMs = Math.max(0, performance.now() - requestStartedAt);
       if (!isMounted) {
         return;
       }
-      setLocationRequestDurationMs(requestDurationMs);
+      setEstimatedInboundLatencyMs(requestDurationMs / 2);
       if (result.error) {
         setError(result.error.message);
       } else {
@@ -175,13 +175,13 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
       return;
     }
     const serverLifetimeMs = new Date(location.expires_at).getTime() - new Date(location.server_now).getTime();
-    const expiresIn = Math.max(0, serverLifetimeMs - (locationRequestDurationMs ?? 0));
+    const expiresIn = Math.max(0, serverLifetimeMs - (estimatedInboundLatencyMs ?? 0));
     const timeout = setTimeout(() => {
       setLocation(null);
       setIsSharing(false);
     }, expiresIn);
     return () => clearTimeout(timeout);
-  }, [isFreelancerMode, isPreview, location, locationRequestDurationMs]);
+  }, [estimatedInboundLatencyMs, isFreelancerMode, isPreview, location]);
 
   const updateLocation = async (position: Location.LocationObject, generation: number) => {
     if (!supabase || !bookingId || generation !== sharingGeneration.current) {
