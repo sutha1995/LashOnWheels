@@ -190,6 +190,20 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
                 </Text>
               </Pressable>
             )}
+            {booking.status === 'confirmed' && (
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() =>
+                  navigation.navigate('LocationTracking', {
+                    bookingId: booking.id,
+                    freelancerId: booking.freelancer_id,
+                    ...(isPreview ? { preview: true } : {}),
+                  })
+                }
+              >
+                <Text style={styles.secondaryButtonText}>Track travel status</Text>
+              </Pressable>
+            )}
           </View>
         ))
       ) : null}

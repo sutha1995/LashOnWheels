@@ -16,6 +16,7 @@ import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
 import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
+import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
@@ -34,6 +35,7 @@ export type RootStackParamList = {
   Admin: { role: 'admin'; preview?: boolean };
   AdminBookings: undefined;
   Notifications: { preview?: boolean } | undefined;
+  LocationTracking: { bookingId?: string; freelancerId?: string; preview?: boolean } | undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -161,6 +163,11 @@ export default function App() {
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
         <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} options={{ title: 'All bookings' }} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
+        <Stack.Screen
+          name="LocationTracking"
+          component={LocationTrackingScreen}
+          options={{ title: 'Travel tracking' }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
