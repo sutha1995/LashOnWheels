@@ -12,6 +12,12 @@ Deno.serve(async (request) => {
     return corsResponse;
   }
 
+  let adminClient: ReturnType<typeof createClient> | null = null;
+  let claimToken = '';
+  let claimedBookingId = '';
+  let checkoutClaimed = false;
+  let stripeSessionId = '';
+
   try {
     const authorization = request.headers.get('Authorization');
     if (!authorization?.startsWith('Bearer ')) {
@@ -31,7 +37,23 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'A booking ID is required.' }, 400);
     }
 
-    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+    adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
+    claimedBookingId = bookingId;
+    claimToken = crypto.randomUUID();
+    const { data: claimData, error: claimError } = await adminClient.rpc('claim_booking_checkout', {
+      p_booking_id: bookingId,
+      p_customer_id: userData.user.id,
+      p_claim_token: claimToken,
+    });
+    if (claimError) {
+      throw claimError;
+    }
+    const claim = (claimData as Array<{ claimed: boolean; payment_reference: string | null }> | null)?.[0];
+    if (!claim?.claimed) {
+      return jsonResponse({ error: 'A checkout session is already being processed for this booking.' }, 409);
+    }
+    checkoutClaimed = true;
+
     const { data: booking, error: bookingError } = await adminClient
       .from('bookings')
       .select('id, customer_id, service_name, price, status, payment_status')
@@ -44,13 +66,6 @@ Deno.serve(async (request) => {
     if (!booking || booking.customer_id !== userData.user.id) {
       return jsonResponse({ error: 'Booking not found.' }, 404);
     }
-    if (booking.status !== 'confirmed') {
-      return jsonResponse({ error: 'Only confirmed bookings can be paid.' }, 400);
-    }
-    if (!['unpaid', 'failed'].includes(booking.payment_status)) {
-      return jsonResponse({ error: 'This booking is not available for payment.' }, 400);
-    }
-
     const amount = Math.round(Number(booking.price) * 100);
     if (!Number.isSafeInteger(amount) || amount <= 0) {
       return jsonResponse({ error: 'This booking has an invalid payment amount.' }, 400);
@@ -74,7 +89,8 @@ Deno.serve(async (request) => {
     params.set('success_url', successUrl);
     params.set('cancel_url', cancelUrl);
 
-    const session = await stripeRequest('checkout/sessions', params);
+    const session = await stripeRequest('checkout/sessions', params, `booking-checkout-${booking.id}-${claimToken}`);
+    stripeSessionId = session.id;
     const { error: paymentError } = await adminClient.rpc('set_booking_payment_status', {
       p_booking_id: booking.id,
       p_payment_status: 'pending',
@@ -87,6 +103,14 @@ Deno.serve(async (request) => {
 
     return jsonResponse({ url: session.url });
   } catch (error) {
+    if (adminClient && checkoutClaimed && claimToken && !stripeSessionId) {
+      await adminClient.rpc('set_booking_payment_status', {
+        p_booking_id: claimedBookingId,
+        p_payment_status: 'failed',
+        p_payment_provider: 'stripe',
+        p_payment_reference: claimToken,
+      });
+    }
     return jsonResponse({ error: error instanceof Error ? error.message : 'Unable to start checkout.' }, 500);
   }
 });

@@ -49,7 +49,7 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
     const { data: booking, error: bookingError } = await adminClient
       .from('bookings')
-      .select('payment_status, payment_reference')
+      .select('status, payment_status, payment_reference')
       .eq('id', bookingId)
       .maybeSingle();
     if (bookingError) {
@@ -57,6 +57,7 @@ Deno.serve(async (request) => {
     }
     if (
       !booking ||
+      booking.status !== 'confirmed' ||
       booking.payment_status === 'paid' ||
       (booking.payment_reference && booking.payment_reference !== session.id)
     ) {

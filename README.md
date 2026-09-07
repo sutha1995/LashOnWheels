@@ -57,7 +57,7 @@ The app uses the `lashonwheels://auth/callback` scheme for native OAuth sessions
 
 ## Stripe test checkout
 
-The customer booking history includes Stripe Checkout for confirmed unpaid bookings. Card details are collected by Stripe and are never stored by Lash On Wheels.
+The customer booking history includes Stripe Checkout for confirmed unpaid or failed bookings. Checkout claims are serialized per booking, and bookings cannot be cancelled while payment is processing. Card details are collected by Stripe and are never stored by Lash On Wheels.
 
 Deploy the Supabase Edge Functions and configure their server-side secrets:
 
