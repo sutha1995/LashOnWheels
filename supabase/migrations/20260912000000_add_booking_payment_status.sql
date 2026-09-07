@@ -30,9 +30,9 @@ begin
   update public.bookings
   set
     payment_status = p_payment_status,
-    payment_provider = nullif(trim(p_payment_provider), ''),
-    payment_reference = nullif(trim(p_payment_reference), ''),
-    paid_at = case when p_payment_status = 'paid' then coalesce(paid_at, now()) else null end
+    payment_provider = coalesce(nullif(trim(p_payment_provider), ''), public.bookings.payment_provider),
+    payment_reference = coalesce(nullif(trim(p_payment_reference), ''), public.bookings.payment_reference),
+    paid_at = case when p_payment_status = 'paid' then coalesce(public.bookings.paid_at, now()) else public.bookings.paid_at end
   where id = p_booking_id
   returning * into booking_row;
 
