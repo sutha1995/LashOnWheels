@@ -1,10 +1,3 @@
-alter table public.bookings
-  add column payment_status text not null default 'unpaid'
-    check (payment_status in ('unpaid', 'pending', 'paid', 'failed', 'refunded')),
-  add column payment_provider text,
-  add column payment_reference text,
-  add column paid_at timestamptz;
-
 create or replace function public.set_booking_payment_status(
   p_booking_id uuid,
   p_payment_status text,
