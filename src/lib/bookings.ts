@@ -182,7 +182,10 @@ export async function cancelBooking(bookingId: string) {
   return { booking: data as Booking | null, error };
 }
 
-export async function updateBookingStatus(bookingId: string, action: 'confirm_booking' | 'reject_booking') {
+export async function updateBookingStatus(
+  bookingId: string,
+  action: 'confirm_booking' | 'reject_booking' | 'complete_booking',
+) {
   if (!supabase) {
     return { booking: null, error: new Error('Supabase is not configured.') };
   }
