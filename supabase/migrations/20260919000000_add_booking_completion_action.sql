@@ -27,6 +27,7 @@ begin
   where id = p_booking_id
     and freelancer_id = auth.uid()
     and status = 'confirmed'
+    and (scheduled_date + end_time) <= (current_timestamp at time zone 'Asia/Kuala_Lumpur')
   returning * into booking_row;
 
   if not found then
