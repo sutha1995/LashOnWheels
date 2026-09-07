@@ -18,7 +18,6 @@ const previewLocation: FreelancerLocation = {
   sharing_enabled: true,
   updated_at: '2026-09-22T10:20:00Z',
 };
-const locationFreshnessMs = 2 * 60 * 1000;
 
 function formatUpdatedAt(updatedAt: string) {
   return new Date(updatedAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
@@ -52,7 +51,7 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
   }, []);
 
   const stopSharing = useCallback(
-    async (silent = false) => {
+    async (silent = false): Promise<FreelancerLocation | null> => {
       const generation = ++sharingGeneration.current;
       subscription.current?.remove();
       subscription.current = null;
@@ -60,7 +59,7 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
         if (!silent) {
           setIsSharing(false);
         }
-        return;
+        return null;
       }
 
       const { data } = await supabase.auth.getUser();
@@ -68,14 +67,14 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
         if (!silent) {
           navigation.replace('Welcome');
         }
-        return;
+        return null;
       }
       const currentLocation = locationRef.current;
       if (!currentLocation) {
         if (!silent) {
           setIsSharing(false);
         }
-        return;
+        return null;
       }
 
       const result = await queueWrite(() =>
@@ -87,19 +86,20 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
         }),
       );
       if (generation !== sharingGeneration.current) {
-        return;
+        return null;
       }
       if (result.error) {
         if (!silent) {
           setError(result.error.message);
         }
-        return;
+        return null;
       }
+      locationRef.current = result.location;
       if (!silent) {
-        locationRef.current = result.location;
         setLocation(result.location);
         setIsSharing(false);
       }
+      return result.location;
     },
     [bookingId, isFreelancerMode, navigation, queueWrite],
   );
@@ -167,7 +167,10 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
     if (isPreview || isFreelancerMode || !location?.sharing_enabled) {
       return;
     }
-    const expiresIn = Math.max(0, new Date(location.updated_at).getTime() + locationFreshnessMs - Date.now());
+    if (!location.expires_at || !location.server_now) {
+      return;
+    }
+    const expiresIn = Math.max(0, new Date(location.expires_at).getTime() - new Date(location.server_now).getTime());
     const timeout = setTimeout(() => {
       setLocation(null);
       setIsSharing(false);
@@ -233,7 +236,11 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
       }
     } catch (caughtError) {
       if (generation === sharingGeneration.current) {
-        await stopSharing(true);
+        const disabledLocation = await stopSharing(true);
+        if (disabledLocation) {
+          locationRef.current = disabledLocation;
+          setLocation(disabledLocation);
+        }
         setError(caughtError instanceof Error ? caughtError.message : 'Unable to start location sharing.');
         setIsSharing(false);
       }
