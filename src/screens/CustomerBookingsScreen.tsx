@@ -51,7 +51,8 @@ const statusLabels: Record<Booking['status'], string> = {
 export function CustomerBookingsScreen({ navigation, route }: Props) {
   const isPreview = route.params?.preview ?? false;
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingBookingId, setCancellingBookingId] = useState('');
 
@@ -60,17 +61,19 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
     const loadBookings = async () => {
       if (isPreview) {
         setBookings(previewBookings);
-        setError('');
+        setLoadError('');
+        setActionError('');
         setIsLoading(false);
         return;
       }
       if (!supabase) {
-        setError('Connect Supabase before loading bookings.');
+        setLoadError('Connect Supabase before loading bookings.');
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
+      setLoadError('');
       const { data } = await supabase.auth.getUser();
       if (!isMounted) {
         return;
@@ -84,10 +87,10 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
         return;
       }
       if (result.error) {
-        setError(result.error.message);
+        setLoadError(result.error.message);
         setBookings([]);
       } else {
-        setError('');
+        setLoadError('');
         setBookings(result.bookings);
       }
       setIsLoading(false);
@@ -123,13 +126,14 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
           ? 'Review how pending, confirmed, and completed appointments will appear.'
           : 'See the latest status and details for every booking you have requested.'}
       </Text>
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
-      {!error && bookings.length === 0 ? (
+      {!!loadError && <Text style={styles.errorText}>{loadError}</Text>}
+      {!!actionError && <Text style={styles.errorText}>{actionError}</Text>}
+      {!loadError && bookings.length === 0 ? (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No bookings yet</Text>
           <Text style={styles.emptyBody}>Your requested appointments will appear here.</Text>
         </View>
-      ) : !error ? (
+      ) : !loadError ? (
         bookings.map((booking) => (
           <View key={booking.id} style={styles.card}>
             <View style={styles.cardHeader}>
@@ -147,14 +151,14 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
             {!isPreview && (booking.status === 'pending' || booking.status === 'confirmed') && (
               <Pressable
                 style={styles.cancelButton}
-                disabled={cancellingBookingId === booking.id}
+                disabled={cancellingBookingId !== ''}
                 onPress={() => {
-                  setError('');
+                  setActionError('');
                   setCancellingBookingId(booking.id);
                   void cancelBooking(booking.id).then((result) => {
                     setCancellingBookingId('');
                     if (result.error || !result.booking) {
-                      setError(result.error?.message ?? 'Unable to cancel this booking.');
+                      setActionError(result.error?.message ?? 'Unable to cancel this booking.');
                       return;
                     }
                     setBookings((current) =>
