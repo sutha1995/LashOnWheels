@@ -12,10 +12,12 @@ import { DashboardScreen } from './src/screens/DashboardScreen';
 import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { CustomerBookingsScreen } from './src/screens/CustomerBookingsScreen';
 import { CustomerReviewScreen } from './src/screens/CustomerReviewScreen';
+import { BookingChatScreen } from './src/screens/BookingChatScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
 import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
+import { FreelancerEarningsScreen } from './src/screens/FreelancerEarningsScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
@@ -29,11 +31,13 @@ export type RootStackParamList = {
   CustomerBooking: undefined;
   CustomerBookings: { preview?: boolean } | undefined;
   CustomerReview: { bookingId: string; serviceName: string; preview?: boolean };
+  BookingChat: { bookingId: string; serviceName: string; preview?: boolean };
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
   FreelancerServices: { preview?: boolean } | undefined;
   FreelancerAvailability: { preview?: boolean } | undefined;
   FreelancerBookings: { preview?: boolean } | undefined;
+  FreelancerEarnings: { preview?: boolean } | undefined;
   Admin: { role: 'admin'; preview?: boolean };
   AdminBookings: undefined;
   Notifications: { preview?: boolean } | undefined;
@@ -142,6 +146,7 @@ export default function App() {
         <Stack.Screen name="CustomerBooking" component={CustomerBookingScreen} options={{ title: 'Book a service' }} />
         <Stack.Screen name="CustomerBookings" component={CustomerBookingsScreen} options={{ title: 'My bookings' }} />
         <Stack.Screen name="CustomerReview" component={CustomerReviewScreen} options={{ title: 'Leave a review' }} />
+        <Stack.Screen name="BookingChat" component={BookingChatScreen} options={{ title: 'Booking chat' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
         <Stack.Screen
           name="FreelancerOnboarding"
@@ -163,6 +168,7 @@ export default function App() {
           component={FreelancerBookingsScreen}
           options={{ title: 'Booking inbox' }}
         />
+        <Stack.Screen name="FreelancerEarnings" component={FreelancerEarningsScreen} options={{ title: 'Earnings' }} />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
         <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} options={{ title: 'All bookings' }} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />

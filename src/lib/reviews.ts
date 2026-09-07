@@ -10,6 +10,15 @@ export type BookingReview = {
   created_at: string;
 };
 
+export function summarizeReviews(reviews: BookingReview[]) {
+  if (!reviews.length) {
+    return { count: 0, averageRating: null };
+  }
+
+  const totalRating = reviews.reduce((total, review) => total + review.rating, 0);
+  return { count: reviews.length, averageRating: totalRating / reviews.length };
+}
+
 export async function getReviewsForBookings(bookingIds: string[]) {
   if (!supabase) {
     return { reviews: [], error: new Error('Supabase is not configured.') };

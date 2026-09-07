@@ -134,9 +134,9 @@ export function LocationTrackingScreen({ navigation, route }: Props) {
         setIsLoading(false);
         return;
       }
-      const requestStartedAt = Date.now();
+      const requestStartedAt = performance.now();
       const result = await getFreelancerLocation(bookingId);
-      const requestDurationMs = Math.max(0, Date.now() - requestStartedAt);
+      const requestDurationMs = Math.max(0, performance.now() - requestStartedAt);
       if (!isMounted) {
         return;
       }

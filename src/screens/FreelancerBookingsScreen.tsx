@@ -5,6 +5,7 @@ import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { getFreelancerBookings, updateBookingStatus, type Booking } from '../lib/bookings';
 import { getFreelancerProfile } from '../lib/profile';
+import { getReviewsForBookings, summarizeReviews, type BookingReview } from '../lib/reviews';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'FreelancerBookings'>;
@@ -42,6 +43,34 @@ const previewBookings: Booking[] = [
     payment_status: 'pending',
     created_at: '2026-09-01T08:15:00Z',
   },
+  {
+    id: 'preview-3',
+    customer_id: 'preview-customer-3',
+    freelancer_id: 'preview-freelancer',
+    freelancer_service_id: 'preview-service-1',
+    scheduled_date: '2026-09-10',
+    start_time: '16:00',
+    end_time: '17:00',
+    service_name: 'Lash Lift',
+    price: 120,
+    duration_minutes: 60,
+    customer_note: '',
+    status: 'completed',
+    payment_status: 'paid',
+    created_at: '2026-09-01T08:30:00Z',
+  },
+];
+
+const previewReviews: BookingReview[] = [
+  {
+    id: 'preview-review-1',
+    booking_id: 'preview-3',
+    customer_id: 'preview-customer-3',
+    freelancer_id: 'preview-freelancer',
+    rating: 5,
+    comment: 'Beautiful result and very professional service.',
+    created_at: '2026-09-10T18:00:00Z',
+  },
 ];
 
 const statusLabels: Record<Booking['status'], string> = {
@@ -65,10 +94,12 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [updatingBookingId, setUpdatingBookingId] = useState('');
+  const [reviewsByBookingId, setReviewsByBookingId] = useState<Record<string, BookingReview>>({});
 
   useEffect(() => {
     if (isPreview) {
       setBookings(previewBookings);
+      setReviewsByBookingId(Object.fromEntries(previewReviews.map((review) => [review.booking_id, review])));
       setIsLoading(false);
       return;
     }
@@ -105,6 +136,10 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
         setError(result.error.message);
       } else {
         setBookings(result.bookings);
+        const reviewResult = await getReviewsForBookings(result.bookings.map((booking) => booking.id));
+        if (!reviewResult.error) {
+          setReviewsByBookingId(Object.fromEntries(reviewResult.reviews.map((review) => [review.booking_id, review])));
+        }
       }
       setIsLoading(false);
     });
@@ -114,7 +149,13 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
     };
   }, [isPreview, navigation]);
 
-  const handleStatusChange = async (bookingId: string, action: 'confirm_booking' | 'reject_booking') => {
+  const reviews = Object.values(reviewsByBookingId);
+  const reviewSummary = summarizeReviews(reviews);
+
+  const handleStatusChange = async (
+    bookingId: string,
+    action: 'confirm_booking' | 'reject_booking' | 'complete_booking',
+  ) => {
     setError('');
     if (!supabase) {
       setError('Connect Supabase before updating bookings.');
@@ -144,9 +185,15 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
       <Text style={styles.title}>Manage your appointments</Text>
       <Text style={styles.subtitle}>
         {isPreview
-          ? 'Review how booking requests and confirmed appointments will appear.'
-          : 'Review new requests and keep your schedule up to date.'}
+          ? 'Review how booking requests, completed appointments, and customer feedback will appear.'
+          : 'Review new requests, completed appointments, and customer feedback.'}
       </Text>
+      {reviewSummary.count > 0 && (
+        <Text style={styles.reviewSummary}>
+          {reviewSummary.averageRating?.toFixed(1)}/5 from {reviewSummary.count} customer review
+          {reviewSummary.count === 1 ? '' : 's'}
+        </Text>
+      )}
       {!!error && <Text style={styles.errorText}>{error}</Text>}
       {bookings.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -171,6 +218,32 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
               {paymentStatusLabels[booking.payment_status]}
             </Text>
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
+            {!!reviewsByBookingId[booking.id] && (
+              <View style={styles.reviewCard}>
+                <Text style={styles.reviewLabel}>CUSTOMER FEEDBACK</Text>
+                <Text style={styles.reviewRating}>
+                  {'★'.repeat(reviewsByBookingId[booking.id].rating)}
+                  {'☆'.repeat(5 - reviewsByBookingId[booking.id].rating)}
+                </Text>
+                {!!reviewsByBookingId[booking.id].comment && (
+                  <Text style={styles.reviewComment}>“{reviewsByBookingId[booking.id].comment}”</Text>
+                )}
+              </View>
+            )}
+            {booking.status !== 'cancelled' && (
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() =>
+                  navigation.navigate('BookingChat', {
+                    bookingId: booking.id,
+                    serviceName: booking.service_name,
+                    ...(isPreview ? { preview: true } : {}),
+                  })
+                }
+              >
+                <Text style={styles.secondaryButtonText}>Open booking chat</Text>
+              </Pressable>
+            )}
             {!isPreview && booking.status === 'pending' && (
               <View style={styles.actions}>
                 <Pressable
@@ -192,17 +265,30 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
               </View>
             )}
             {booking.status === 'confirmed' && (
-              <Pressable
-                style={styles.secondaryButton}
-                onPress={() =>
-                  navigation.navigate('LocationTracking', {
-                    bookingId: booking.id,
-                    ...(isPreview ? { preview: true } : {}),
-                  })
-                }
-              >
-                <Text style={styles.secondaryButtonText}>Share travel location</Text>
-              </Pressable>
+              <>
+                <Pressable
+                  style={styles.secondaryButton}
+                  onPress={() =>
+                    navigation.navigate('LocationTracking', {
+                      bookingId: booking.id,
+                      ...(isPreview ? { preview: true } : {}),
+                    })
+                  }
+                >
+                  <Text style={styles.secondaryButtonText}>Share travel location</Text>
+                </Pressable>
+                {!isPreview && (
+                  <Pressable
+                    style={styles.primaryButton}
+                    disabled={updatingBookingId === booking.id}
+                    onPress={() => void handleStatusChange(booking.id, 'complete_booking')}
+                  >
+                    <Text style={styles.primaryButtonText}>
+                      {updatingBookingId === booking.id ? 'Updating…' : 'Mark completed'}
+                    </Text>
+                  </Pressable>
+                )}
+              </>
             )}
           </View>
         ))
@@ -222,6 +308,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: theme.colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1.5, marginTop: 16 },
   title: { color: theme.colors.ink, fontSize: 32, fontWeight: '800', lineHeight: 38, marginTop: 12 },
   subtitle: { color: theme.colors.muted, fontSize: 16, lineHeight: 24, marginTop: 10 },
+  reviewSummary: { color: theme.colors.accent, fontSize: 14, fontWeight: '700', marginTop: 14 },
   errorText: { color: '#B42318', fontSize: 13, marginTop: 16 },
   card: {
     backgroundColor: theme.colors.white,
@@ -249,6 +336,10 @@ const styles = StyleSheet.create({
   payment_failed: { color: '#B42318' },
   payment_refunded: { color: theme.colors.muted },
   note: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 14 },
+  reviewCard: { backgroundColor: theme.colors.cream, borderRadius: 12, marginTop: 16, padding: 14 },
+  reviewLabel: { color: theme.colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  reviewRating: { color: theme.colors.accent, fontSize: 20, letterSpacing: 1, marginTop: 6 },
+  reviewComment: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 4 },
   emptyCard: {
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.border,

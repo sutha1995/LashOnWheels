@@ -110,6 +110,53 @@ export async function getFreelancerBookings(userId: string) {
   return { bookings: (data ?? []) as Booking[], error };
 }
 
+export async function getFreelancerEarningsBookings(userId: string) {
+  if (!supabase) {
+    return { bookings: [], error: new Error('Supabase is not configured.') };
+  }
+
+  const pageSize = 1000;
+  const bookings: Booking[] = [];
+  let lastBooking: Pick<Booking, 'scheduled_date' | 'start_time' | 'id'> | null = null;
+
+  while (true) {
+    let query = supabase
+      .from('bookings')
+      .select(
+        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
+      )
+      .eq('freelancer_id', userId)
+      .order('scheduled_date', { ascending: true })
+      .order('start_time', { ascending: true })
+      .order('id', { ascending: true })
+      .limit(pageSize);
+
+    if (lastBooking) {
+      query = query.or(
+        `scheduled_date.gt.${lastBooking.scheduled_date},and(scheduled_date.eq.${lastBooking.scheduled_date},start_time.gt.${lastBooking.start_time}),and(scheduled_date.eq.${lastBooking.scheduled_date},start_time.eq.${lastBooking.start_time},id.gt.${lastBooking.id})`,
+      );
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      return { bookings: [], error };
+    }
+
+    const page = (data ?? []) as Booking[];
+    bookings.push(...page);
+    if (page.length < pageSize) {
+      return { bookings, error: null };
+    }
+
+    const finalBooking = page[page.length - 1];
+    lastBooking = {
+      scheduled_date: finalBooking.scheduled_date,
+      start_time: finalBooking.start_time,
+      id: finalBooking.id,
+    };
+  }
+}
+
 export async function getCustomerBookings(userId: string) {
   if (!supabase) {
     return { bookings: [], error: new Error('Supabase is not configured.') };
@@ -182,11 +229,27 @@ export async function cancelBooking(bookingId: string) {
   return { booking: data as Booking | null, error };
 }
 
-export async function updateBookingStatus(bookingId: string, action: 'confirm_booking' | 'reject_booking') {
+export async function updateBookingStatus(
+  bookingId: string,
+  action: 'confirm_booking' | 'reject_booking' | 'complete_booking',
+) {
   if (!supabase) {
     return { booking: null, error: new Error('Supabase is not configured.') };
   }
 
   const { data, error } = await supabase.rpc(action, { p_booking_id: bookingId });
   return { booking: data as Booking | null, error };
+}
+
+export async function createStripeCheckoutSession(bookingId: string) {
+  if (!supabase) {
+    return { url: null, error: new Error('Supabase is not configured.') };
+  }
+
+  const { data, error } = await supabase.functions.invoke('create-stripe-checkout-session', {
+    body: { bookingId },
+  });
+  const checkoutUrl =
+    data && typeof data === 'object' && 'url' in data && typeof data.url === 'string' ? data.url : null;
+  return { url: checkoutUrl, error };
 }
