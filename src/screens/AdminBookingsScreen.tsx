@@ -5,6 +5,7 @@ import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { getAdminBookings, type Booking } from '../lib/bookings';
 import { getProfile } from '../lib/profile';
+import { getReviewsForBookings, summarizeReviews, type BookingReview } from '../lib/reviews';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'AdminBookings'>;
@@ -28,6 +29,7 @@ export function AdminBookingsScreen({ navigation }: Props) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [reviewsByBookingId, setReviewsByBookingId] = useState<Record<string, BookingReview>>({});
 
   useEffect(() => {
     let isMounted = true;
@@ -77,6 +79,10 @@ export function AdminBookingsScreen({ navigation }: Props) {
       } else {
         setError('');
         setBookings(result.bookings);
+        const reviewResult = await getReviewsForBookings(result.bookings.map((booking) => booking.id));
+        if (!reviewResult.error) {
+          setReviewsByBookingId(Object.fromEntries(reviewResult.reviews.map((review) => [review.booking_id, review])));
+        }
       }
       setIsLoading(false);
     };
@@ -91,6 +97,8 @@ export function AdminBookingsScreen({ navigation }: Props) {
       unsubscribe();
     };
   }, [navigation]);
+
+  const reviewSummary = summarizeReviews(Object.values(reviewsByBookingId));
 
   if (isLoading) {
     return (
@@ -107,6 +115,12 @@ export function AdminBookingsScreen({ navigation }: Props) {
       <Text style={styles.subtitle}>
         Monitor appointment status across customers and freelancers. This view is read-only.
       </Text>
+      {reviewSummary.count > 0 && (
+        <Text style={styles.reviewSummary}>
+          {reviewSummary.averageRating?.toFixed(1)}/5 platform average from {reviewSummary.count} review
+          {reviewSummary.count === 1 ? '' : 's'}
+        </Text>
+      )}
       {!!error && <Text style={styles.errorText}>{error}</Text>}
       {!error && bookings.length === 0 ? (
         <View style={styles.emptyCard}>
@@ -131,6 +145,18 @@ export function AdminBookingsScreen({ navigation }: Props) {
             <Text style={styles.meta}>Customer: {booking.customer_id}</Text>
             <Text style={styles.meta}>Freelancer: {booking.freelancer_id}</Text>
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
+            {!!reviewsByBookingId[booking.id] && (
+              <View style={styles.reviewCard}>
+                <Text style={styles.reviewLabel}>CUSTOMER FEEDBACK</Text>
+                <Text style={styles.reviewRating}>
+                  {'★'.repeat(reviewsByBookingId[booking.id].rating)}
+                  {'☆'.repeat(5 - reviewsByBookingId[booking.id].rating)}
+                </Text>
+                {!!reviewsByBookingId[booking.id].comment && (
+                  <Text style={styles.reviewComment}>“{reviewsByBookingId[booking.id].comment}”</Text>
+                )}
+              </View>
+            )}
           </View>
         ))
       )}
@@ -149,6 +175,7 @@ const styles = StyleSheet.create({
   eyebrow: { color: theme.colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 1.5, marginTop: 16 },
   title: { color: theme.colors.ink, fontSize: 32, fontWeight: '800', lineHeight: 38, marginTop: 12 },
   subtitle: { color: theme.colors.muted, fontSize: 16, lineHeight: 24, marginTop: 10 },
+  reviewSummary: { color: theme.colors.accent, fontSize: 14, fontWeight: '700', marginTop: 14 },
   errorText: { color: '#B42318', fontSize: 13, marginTop: 16 },
   card: {
     backgroundColor: theme.colors.white,
@@ -170,6 +197,10 @@ const styles = StyleSheet.create({
   price: { color: theme.colors.ink, fontSize: 20, fontWeight: '800', marginTop: 18 },
   meta: { color: theme.colors.muted, marginTop: 6 },
   note: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 14 },
+  reviewCard: { backgroundColor: theme.colors.cream, borderRadius: 12, marginTop: 16, padding: 14 },
+  reviewLabel: { color: theme.colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  reviewRating: { color: theme.colors.accent, fontSize: 20, letterSpacing: 1, marginTop: 6 },
+  reviewComment: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 4 },
   emptyCard: {
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.border,
