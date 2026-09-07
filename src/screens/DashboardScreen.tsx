@@ -89,11 +89,8 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('AdminBookings')}>
             <Text style={styles.primaryButtonText}>Review all bookings</Text>
           </Pressable>
-          <Pressable
-            style={styles.secondaryButton}
-            onPress={() => navigation.navigate('Notifications', { preview: true })}
-          >
-            <Text style={styles.secondaryButtonText}>Preview notifications</Text>
+          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
+            <Text style={styles.secondaryButtonText}>View notifications</Text>
           </Pressable>
         </View>
       )}

@@ -3,7 +3,12 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
-import { getNotifications, markNotificationRead, type Notification } from '../lib/notifications';
+import {
+  getNotifications,
+  markNotificationRead,
+  type Notification,
+  type NotificationCursor,
+} from '../lib/notifications';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Notifications'>;
@@ -41,17 +46,21 @@ export function NotificationsScreen({ navigation, route }: Props) {
   const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<NotificationCursor | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     const loadNotifications = async () => {
       if (isPreview) {
         setNotifications(previewNotifications);
+        setNextCursor(null);
         setIsLoading(false);
         return;
       }
       if (!supabase) {
         setLoadError('Connect Supabase before loading notifications.');
+        setNextCursor(null);
         setIsLoading(false);
         return;
       }
@@ -74,8 +83,10 @@ export function NotificationsScreen({ navigation, route }: Props) {
       if (result.error) {
         setLoadError(result.error.message);
         setNotifications([]);
+        setNextCursor(null);
       } else {
         setNotifications(result.notifications);
+        setNextCursor(result.nextCursor);
       }
       setIsLoading(false);
     };
@@ -92,6 +103,32 @@ export function NotificationsScreen({ navigation, route }: Props) {
       unsubscribe();
     };
   }, [isPreview, navigation]);
+
+  const loadMore = async () => {
+    if (isPreview || !nextCursor || isLoadingMore || !supabase) {
+      return;
+    }
+
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      navigation.replace('Welcome');
+      return;
+    }
+
+    setActionError('');
+    setIsLoadingMore(true);
+    const result = await getNotifications(data.user.id, nextCursor);
+    if (result.error) {
+      setActionError(result.error.message);
+    } else {
+      setNotifications((current) => {
+        const existingIds = new Set(current.map((notification) => notification.id));
+        return [...current, ...result.notifications.filter((notification) => !existingIds.has(notification.id))];
+      });
+      setNextCursor(result.nextCursor);
+    }
+    setIsLoadingMore(false);
+  };
 
   const markAsRead = async (notification: Notification) => {
     if (isPreview || notification.read_at) {
@@ -141,6 +178,11 @@ export function NotificationsScreen({ navigation, route }: Props) {
             <Text style={styles.cardDate}>{formatCreatedAt(notification.created_at)}</Text>
           </Pressable>
         ))
+      )}
+      {nextCursor && (
+        <Pressable style={styles.secondaryButton} disabled={isLoadingMore} onPress={() => void loadMore()}>
+          <Text style={styles.secondaryButtonText}>{isLoadingMore ? 'Loading…' : 'Load older notifications'}</Text>
+        </Pressable>
       )}
       <Pressable style={styles.secondaryButton} onPress={() => navigation.goBack()}>
         <Text style={styles.secondaryButtonText}>{isPreview ? 'Back to preview' : 'Back to dashboard'}</Text>
