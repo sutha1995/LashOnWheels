@@ -94,7 +94,13 @@ Deno.serve(async (request) => {
   const response = await fetch(`${nebiusBaseUrl.replace(/\/$/, '')}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${nebiusApiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: nebiusModel, temperature: 0.4, max_tokens: action === 'lash_trends' ? 360 : 180, messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }] }),
+    body: JSON.stringify({
+      model: nebiusModel,
+      temperature: 0.4,
+      reasoning_effort: 'low',
+      max_completion_tokens: action === 'lash_trends' ? 1200 : 800,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }],
+    }),
   });
   if (!response.ok) return jsonResponse({ error: 'AI drafting is temporarily unavailable.' }, 502);
   const result = await response.json();
