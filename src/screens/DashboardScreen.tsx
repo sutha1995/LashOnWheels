@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
@@ -68,6 +68,7 @@ export function DashboardScreen({ navigation, route }: Props) {
   const [catalogServices, setCatalogServices] = useState<Service[]>([]);
   const [catalogError, setCatalogError] = useState('');
   const [signOutError, setSignOutError] = useState('');
+  const [isRequestingFreelancerAccess, setIsRequestingFreelancerAccess] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const role = route.params?.role ?? 'customer';
   const isPreview = route.params?.preview ?? false;
@@ -127,13 +128,15 @@ export function DashboardScreen({ navigation, route }: Props) {
       navigation.navigate('Freelancer', { role: 'freelancer', preview: true });
       return;
     }
+    setServiceAccessError('');
+    setIsRequestingFreelancerAccess(true);
     const result = await requestFreelancerAccess();
+    setIsRequestingFreelancerAccess(false);
     if (result.error) {
       setServiceAccessError(result.error.message);
       return;
     }
-    Alert.alert('Freelancer access enabled', 'Complete your profile next. Your services will remain hidden until an admin approves your freelancer profile.');
-    navigation.reset({ index: 0, routes: [{ name: 'Freelancer', params: { role: 'freelancer' } }] });
+    navigation.replace('FreelancerOnboarding');
   };
 
   return (
@@ -147,9 +150,16 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Text style={styles.previewBody}>
             Create your freelancer profile to manage your availability, services, bookings, and earnings.
           </Text>
-          <Pressable style={styles.primaryButton} onPress={() => void becomeFreelancer()}>
-            <Text style={styles.primaryButtonText}>Become a freelancer</Text>
+          <Pressable
+            style={[styles.primaryButton, isRequestingFreelancerAccess && styles.disabledButton]}
+            disabled={isRequestingFreelancerAccess}
+            onPress={() => void becomeFreelancer()}
+          >
+            <Text style={styles.primaryButtonText}>
+              {isRequestingFreelancerAccess ? 'Setting up your access…' : 'Become a freelancer'}
+            </Text>
           </Pressable>
+          {!!serviceAccessError && <Text style={styles.errorText}>{serviceAccessError}</Text>}
         </View>
       )}
       <View style={styles.section}>
@@ -398,6 +408,7 @@ const styles = StyleSheet.create({
   signOutButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 28, padding: 15 },
   signOutText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 24, padding: 16 },
+  disabledButton: { opacity: 0.6 },
   primaryButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
   secondaryButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 12, padding: 15 },
   secondaryButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
