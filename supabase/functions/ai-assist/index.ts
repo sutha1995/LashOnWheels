@@ -98,7 +98,7 @@ Deno.serve(async (request) => {
       model: nebiusModel,
       temperature: 0.4,
       reasoning_effort: 'low',
-      max_completion_tokens: action === 'lash_trends' ? 1200 : 800,
+      max_completion_tokens: action === 'lash_trends' ? 1800 : 1400,
       messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userContent }],
     }),
   });
