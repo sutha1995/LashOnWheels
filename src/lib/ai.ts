@@ -22,3 +22,10 @@ export async function researchLashTrends(source: string) {
   );
   return { draft, sources, error };
 }
+
+export async function getOnboardingGuidance(action: 'starter_service_menu' | 'profile_review', source: string) {
+  if (!supabase) return { draft: null, error: new Error('Supabase is not configured.') };
+  const { data, error } = await supabase.functions.invoke('ai-assist', { body: { action, source } });
+  const draft = data && typeof data === 'object' && 'draft' in data && typeof data.draft === 'string' ? data.draft : null;
+  return { draft, error };
+}

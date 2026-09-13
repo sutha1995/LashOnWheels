@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { pickProfilePhotoUrl } from '../lib/portfolio';
-import { draftFreelancerBio, researchLashTrends, type ResearchSource } from '../lib/ai';
+import { draftFreelancerBio, getOnboardingGuidance, researchLashTrends, type ResearchSource } from '../lib/ai';
 import { getFreelancerProfile, getProfile, saveFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
@@ -28,6 +28,10 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [trendIdeas, setTrendIdeas] = useState('');
   const [trendSources, setTrendSources] = useState<ResearchSource[]>([]);
   const [isResearchingTrends, setIsResearchingTrends] = useState(false);
+  const [starterMenu, setStarterMenu] = useState('');
+  const [profileReview, setProfileReview] = useState('');
+  const [isSuggestingMenu, setIsSuggestingMenu] = useState(false);
+  const [isReviewingProfile, setIsReviewingProfile] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -182,6 +186,27 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
     setTrendSources(result.sources);
   };
 
+  const onboardingContext = () => `Name: ${displayName.trim() || 'Not provided'}\nBio: ${bio.trim() || 'Not provided'}\nExperience: ${experienceYears || 'Not provided'} years\nService area: ${serviceArea.trim() || 'Not provided'}\nTravel distance: ${maxTravelDistance || 'Not provided'} km\nTravel fee: RM${travelFee || 'Not provided'}\nProfile photo: ${profilePhotoUrl ? 'Added' : 'Not added'}`;
+
+  const handleSuggestMenu = async () => {
+    setError('');
+    if (!serviceArea.trim()) { setError('Add your service area first.'); return; }
+    setIsSuggestingMenu(true);
+    const result = await getOnboardingGuidance('starter_service_menu', onboardingContext());
+    setIsSuggestingMenu(false);
+    if (result.error || !result.draft) { setError(result.error?.message ?? 'Unable to suggest a starter menu.'); return; }
+    setStarterMenu(result.draft);
+  };
+
+  const handleReviewProfile = async () => {
+    setError('');
+    setIsReviewingProfile(true);
+    const result = await getOnboardingGuidance('profile_review', onboardingContext());
+    setIsReviewingProfile(false);
+    if (result.error || !result.draft) { setError(result.error?.message ?? 'Unable to review your profile.'); return; }
+    setProfileReview(result.draft);
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -233,11 +258,29 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       <Pressable style={styles.photoButton} disabled={isResearchingTrends} onPress={() => void handleResearchTrends()}>
         <Text style={styles.photoButtonText}>{isResearchingTrends ? 'Researching…' : 'Research lash trends'}</Text>
       </Pressable>
+      <Pressable style={styles.photoButton} disabled={isSuggestingMenu} onPress={() => void handleSuggestMenu()}>
+        <Text style={styles.photoButtonText}>{isSuggestingMenu ? 'Suggesting…' : 'Suggest starter menu'}</Text>
+      </Pressable>
+      <Pressable style={styles.photoButton} disabled={isReviewingProfile} onPress={() => void handleReviewProfile()}>
+        <Text style={styles.photoButtonText}>{isReviewingProfile ? 'Reviewing…' : 'Review my profile'}</Text>
+      </Pressable>
       {!!trendIdeas && (
         <View style={styles.researchCard}>
           <Text style={styles.researchTitle}>Content ideas</Text>
           <Text style={styles.researchBody}>{trendIdeas}</Text>
           {!!trendSources.length && <Text style={styles.researchSources}>Sources: {trendSources.map((source) => source.title).join(' · ')}</Text>}
+        </View>
+      )}
+      {!!starterMenu && (
+        <View style={styles.researchCard}>
+          <Text style={styles.researchTitle}>Suggested starter menu</Text>
+          <Text style={styles.researchBody}>{starterMenu}</Text>
+        </View>
+      )}
+      {!!profileReview && (
+        <View style={styles.researchCard}>
+          <Text style={styles.researchTitle}>Profile checklist</Text>
+          <Text style={styles.researchBody}>{profileReview}</Text>
         </View>
       )}
       <Pressable style={styles.photoButton} onPress={() => void setCurrentBaseLocation()}>

@@ -13,6 +13,10 @@ const prompts = {
     'Write a warm, professional freelancer profile bio for a mobile lash artist. Keep it under 70 words. Do not invent qualifications, guarantees, prices, or safety claims. Return only the draft.',
   service_description:
     'Write a clear, appealing service description for a mobile lash service. Keep it under 45 words. Do not invent qualifications, guarantees, prices, or safety claims. Return only the draft.',
+  starter_service_menu:
+    'Suggest a practical starter menu of four to six services from this catalogue only: Classic Lash Extension, Hybrid Lash Extension, Volume Lash Extension, Mega Volume Lash Extension, Lash Lift, Lash Tint, Lash Lift + Tint, Lash Extension Refill, Lash Extension Removal. Base the suggestions only on the supplied artist context. Do not recommend prices, qualifications, guarantees, or safety claims. State that the artist should offer only services they are trained and insured to perform. Return only a concise bullet list.',
+  profile_review:
+    'Review the supplied freelancer onboarding details and provide a short, constructive checklist of up to five improvements. Focus on clarity, customer expectations, service area, travel settings, and missing profile information. Do not assess competence, invent qualifications, make medical or safety claims, or tell the artist they are approved. Return only the checklist.',
 } as const;
 
 type Action = keyof typeof prompts | 'lash_trends';
