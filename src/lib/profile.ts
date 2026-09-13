@@ -12,6 +12,7 @@ export type Profile = {
   full_name: string;
   role: UserRole;
   requested_role: SignupRole;
+  phone: string | null;
 };
 
 export type FreelancerProfile = {
@@ -24,17 +25,20 @@ export type FreelancerProfile = {
   travel_fee: number;
   profile_photo_url: string | null;
   onboarding_completed: boolean;
+  verification_status: 'pending' | 'approved' | 'rejected';
+  base_latitude: number | null;
+  base_longitude: number | null;
 };
 
-export async function saveProfile(user: User, fullName: string, requestedRole: SignupRole) {
+export async function saveProfile(user: User, fullName: string, phone: string, requestedRole: SignupRole) {
   if (!supabase) {
     return { profile: null, error: new Error('Supabase is not configured.') };
   }
 
   const { data, error } = await supabase
     .from('profiles')
-    .insert({ id: user.id, full_name: fullName.trim(), role: 'customer', requested_role: requestedRole })
-    .select('id, full_name, role, requested_role')
+    .insert({ id: user.id, full_name: fullName.trim(), phone: phone.trim() || null, role: 'customer', requested_role: requestedRole })
+    .select('id, full_name, role, requested_role, phone')
     .single();
 
   return { profile: data as Profile | null, error };
@@ -47,7 +51,7 @@ export async function getProfile(userId: string) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, role, requested_role')
+    .select('id, full_name, role, requested_role, phone')
     .eq('id', userId)
     .single();
   return { profile: data as Profile | null, error };
@@ -61,7 +65,7 @@ export async function getFreelancerProfile(userId: string) {
   const { data, error } = await supabase
     .from('freelancer_profiles')
     .select(
-      'id, display_name, bio, experience_years, service_area, max_travel_distance_km, travel_fee, profile_photo_url, onboarding_completed',
+      'id, display_name, bio, experience_years, service_area, max_travel_distance_km, travel_fee, profile_photo_url, onboarding_completed, verification_status, base_latitude, base_longitude',
     )
     .eq('id', userId)
     .maybeSingle();
@@ -71,9 +75,11 @@ export async function getFreelancerProfile(userId: string) {
 
 export type FreelancerProfileValues = Omit<
   FreelancerProfile,
-  'id' | 'onboarding_completed' | 'profile_photo_url'
+  'id' | 'onboarding_completed' | 'profile_photo_url' | 'verification_status' | 'base_latitude' | 'base_longitude'
 > & {
   profile_photo_url?: string | null;
+  base_latitude?: number | null;
+  base_longitude?: number | null;
 };
 
 export async function saveFreelancerProfile(userId: string, values: FreelancerProfileValues) {
@@ -85,7 +91,7 @@ export async function saveFreelancerProfile(userId: string, values: FreelancerPr
     .from('freelancer_profiles')
     .upsert({ id: userId, ...values, onboarding_completed: true })
     .select(
-      'id, display_name, bio, experience_years, service_area, max_travel_distance_km, travel_fee, profile_photo_url, onboarding_completed',
+      'id, display_name, bio, experience_years, service_area, max_travel_distance_km, travel_fee, profile_photo_url, onboarding_completed, verification_status, base_latitude, base_longitude',
     )
     .single();
 
@@ -108,7 +114,8 @@ export async function ensureProfile(user: User) {
   const pendingRole = await getPendingSignupRole();
   const requestedRole = pendingRole ?? metadataRequestedRole;
   const fullName = typeof user.user_metadata.full_name === 'string' ? user.user_metadata.full_name : '';
-  const result = await saveProfile(user, fullName, requestedRole);
+  const phone = typeof user.user_metadata.phone === 'string' ? user.user_metadata.phone : '';
+  const result = await saveProfile(user, fullName, phone, requestedRole);
   if (!result.error) {
     await clearPendingSignupRole();
   }

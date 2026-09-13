@@ -83,4 +83,13 @@ Create a Stripe webhook endpoint for `stripe-webhook` and enable:
 
 Use Stripe test keys and test cards during development. Never place Stripe secrets in Expo environment variables or commit them to the repository.
 
+## Booking reminders
+
+The `booking-reminders` Edge Function creates one in-app reminder per customer and freelancer for confirmed bookings scheduled the next day. Deploy it and set a secret, then configure a daily Supabase scheduled-function or external cron request that sends the same secret in the `x-cron-secret` header:
+
+```bash
+supabase functions deploy booking-reminders
+supabase secrets set BOOKING_REMINDER_CRON_SECRET=replace-with-a-long-random-value
+```
+
 Apply the freelancer profile, service catalog, availability, booking, payment-status, notification, location, review, messaging, marketplace summary, and portfolio migrations before using these flows with real accounts. The portfolio migration also creates the `portfolio` storage bucket with row level security policies; do not change it to a private bucket without also updating photo URL handling.

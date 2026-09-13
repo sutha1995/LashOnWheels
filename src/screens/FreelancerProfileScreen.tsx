@@ -18,6 +18,8 @@ const previewProfile: FreelancerMarketplaceProfile = {
     travel_fee: 5,
     profile_photo_url: null,
     onboarding_completed: true,
+    base_latitude: 3.32,
+    base_longitude: 101.58,
   },
   services: [
     {

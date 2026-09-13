@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import * as Location from 'expo-location';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
@@ -14,6 +15,7 @@ const sortOptions: Array<{ value: MarketplaceSortOption; label: string }> = [
   { value: 'recommended', label: 'Recommended' },
   { value: 'rating', label: 'Top rated' },
   { value: 'price', label: 'Lowest price' },
+  { value: 'distance', label: 'Nearest' },
 ];
 
 const previewCatalog: Service[] = [
@@ -57,9 +59,12 @@ const previewListings: MarketplaceListing[] = [
       travel_fee: 5,
       profile_photo_url: null,
       onboarding_completed: true,
+      base_latitude: 3.32,
+      base_longitude: 101.58,
     },
     rating: { averageRating: 4.9, reviewCount: 27 },
     completedBookings: 31,
+    distanceKm: 8.2,
   },
   {
     id: 'preview-listing-2',
@@ -77,9 +82,12 @@ const previewListings: MarketplaceListing[] = [
       travel_fee: 0,
       profile_photo_url: null,
       onboarding_completed: true,
+      base_latitude: 3.35,
+      base_longitude: 101.25,
     },
     rating: { averageRating: null, reviewCount: 0 },
     completedBookings: 4,
+    distanceKm: 21.1,
   },
   {
     id: 'preview-listing-3',
@@ -97,9 +105,12 @@ const previewListings: MarketplaceListing[] = [
       travel_fee: 0,
       profile_photo_url: null,
       onboarding_completed: true,
+      base_latitude: 3.35,
+      base_longitude: 101.25,
     },
     rating: { averageRating: 4.6, reviewCount: 9 },
     completedBookings: 12,
+    distanceKm: 21.1,
   },
 ];
 
@@ -128,6 +139,7 @@ export function SearchScreen({ navigation, route }: Props) {
   const [locationQuery, setLocationQuery] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
   const [startTime, setStartTime] = useState('');
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [sort, setSort] = useState<MarketplaceSortOption>('recommended');
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [error, setError] = useState('');
@@ -212,6 +224,7 @@ export function SearchScreen({ navigation, route }: Props) {
         locationQuery: locationQuery.trim() || undefined,
         scheduledDate: dateFilter || undefined,
         startTime: timeFilter || undefined,
+        ...(coordinates ?? {}),
       },
       sort,
     );
@@ -222,6 +235,16 @@ export function SearchScreen({ navigation, route }: Props) {
     }
     setListings(result.listings);
     setHasSearched(true);
+  };
+
+  const useCurrentLocation = async () => {
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.status !== 'granted') {
+      setError('Location permission is required to sort by distance.');
+      return;
+    }
+    const current = await Location.getCurrentPositionAsync({});
+    setCoordinates({ latitude: current.coords.latitude, longitude: current.coords.longitude });
   };
 
   const clearFilters = () => {
@@ -312,6 +335,9 @@ export function SearchScreen({ navigation, route }: Props) {
             </Pressable>
           ))}
         </View>
+        <Pressable style={styles.locationButton} onPress={() => void useCurrentLocation()}>
+          <Text style={styles.locationButtonText}>{coordinates ? 'Location ready for distance sorting' : 'Use my location for distance'}</Text>
+        </Pressable>
         {!!error && <Text style={styles.errorText}>{error}</Text>}
         <View style={styles.searchActions}>
           <Pressable style={styles.searchButton} disabled={isSearching} onPress={() => void runSearch()}>
@@ -341,6 +367,7 @@ export function SearchScreen({ navigation, route }: Props) {
               {listing.service.name} · RM{listing.price.toFixed(2)} · {listing.duration_minutes} minutes
             </Text>
             <Text style={styles.resultArea}>Serves {listing.freelancer.service_area || 'Malaysia'}</Text>
+            {listing.distanceKm !== null && <Text style={styles.resultArea}>{listing.distanceKm.toFixed(1)} km away</Text>}
           </View>
         </Pressable>
       ))}
@@ -403,6 +430,8 @@ const styles = StyleSheet.create({
   searchButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
   resetButton: { borderColor: theme.colors.border, borderRadius: 12, borderWidth: 1, padding: 14 },
   resetButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
+  locationButton: { borderColor: theme.colors.border, borderRadius: 10, borderWidth: 1, marginTop: 12, padding: 10 },
+  locationButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
   resultsHeading: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginBottom: 12, marginTop: 22 },
   resultCard: {
     alignItems: 'center',

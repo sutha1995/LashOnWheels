@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import * as Location from 'expo-location';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { createBooking, getMarketplaceServices, type MarketplaceService } from '../lib/bookings';
+import { calculateBookingTotal } from '../lib/bookingRules';
 import { addMinutesToTime, formatDateKey, getTomorrowDateKey, isValidDate, isValidTime } from '../lib/datetime';
 import { supabase } from '../lib/supabase';
 
@@ -16,6 +18,8 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
   const [customerNote, setCustomerNote] = useState('');
+  const [serviceAddress, setServiceAddress] = useState('');
+  const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -80,6 +84,14 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
       setError('Connect Supabase before creating a booking.');
       return;
     }
+    if (!serviceAddress.trim()) {
+      setError('Enter the address where the service will be provided.');
+      return;
+    }
+    if (!coordinates) {
+      setError('Use your current location to confirm the service location.');
+      return;
+    }
 
     setIsSaving(true);
     const result = await createBooking(selectedServiceId, {
@@ -87,6 +99,8 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
       start_time: startTime,
       end_time: endTime,
       customer_note: customerNote.trim(),
+      service_address: serviceAddress.trim(),
+      ...coordinates,
     });
     setIsSaving(false);
     if (result.error || !result.booking) {
@@ -94,6 +108,17 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
       return;
     }
     navigation.goBack();
+  };
+
+  const useCurrentLocation = async () => {
+    setError('');
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.status !== 'granted') {
+      setError('Location permission is required to confirm the service location.');
+      return;
+    }
+    const current = await Location.getCurrentPositionAsync({});
+    setCoordinates({ latitude: current.coords.latitude, longitude: current.coords.longitude });
   };
 
   if (isLoading) {
@@ -159,6 +184,25 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
             multiline
             style={[styles.input, styles.multilineInput]}
           />
+          <Text style={styles.formLabel}>Service address</Text>
+          <TextInput
+            value={serviceAddress}
+            onChangeText={setServiceAddress}
+            placeholder="Street, area, postcode, city"
+            multiline
+            style={[styles.input, styles.multilineInput]}
+          />
+          <Pressable style={styles.locationButton} onPress={() => void useCurrentLocation()}>
+            <Text style={styles.locationButtonText}>
+              {coordinates ? 'Service location confirmed' : 'Use my current location'}
+            </Text>
+          </Pressable>
+          <Text style={styles.totalText}>
+            Total: RM{calculateBookingTotal(selectedService.price, selectedService.freelancer.travel_fee).toFixed(2)}
+            {selectedService.freelancer.travel_fee > 0
+              ? ` (includes RM${selectedService.freelancer.travel_fee.toFixed(2)} travel fee)`
+              : ''}
+          </Text>
           <Pressable style={styles.primaryButton} disabled={isSaving} onPress={() => void handleBook()}>
             <Text style={styles.primaryButtonText}>{isSaving ? 'Requesting…' : 'Request booking'}</Text>
           </Pressable>
@@ -210,6 +254,9 @@ const styles = StyleSheet.create({
   multilineInput: { minHeight: 76, textAlignVertical: 'top' },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 16, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  locationButton: { borderColor: theme.colors.border, borderRadius: 10, borderWidth: 1, marginTop: 12, padding: 12 },
+  locationButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
+  totalText: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginTop: 14 },
   errorText: { color: '#B42318', fontSize: 13, marginBottom: 12, textAlign: 'center' },
   emptyText: { color: theme.colors.muted, marginTop: 24, textAlign: 'center' },
 });

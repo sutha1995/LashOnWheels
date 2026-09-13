@@ -15,7 +15,7 @@ export async function signInWithEmail(email: string, password: string) {
   return { user: data.user, needsConfirmation: false, error };
 }
 
-export async function signUpWithEmail(email: string, password: string, fullName: string, role: SignupRole) {
+export async function signUpWithEmail(email: string, password: string, fullName: string, phone: string, role: SignupRole) {
   if (!supabase) {
     return { user: null, needsConfirmation: false, error: new Error('Supabase is not configured.') };
   }
@@ -23,7 +23,7 @@ export async function signUpWithEmail(email: string, password: string, fullName:
   const { data, error } = await supabase.auth.signUp({
     email: email.trim(),
     password,
-    options: { data: { full_name: fullName.trim(), role } },
+    options: { data: { full_name: fullName.trim(), phone: phone.trim(), role } },
   });
 
   if (error || !data.user || !data.session) {
@@ -31,6 +31,13 @@ export async function signUpWithEmail(email: string, password: string, fullName:
   }
 
   return { user: data.user, needsConfirmation: false, error: null };
+}
+
+export async function requestPasswordReset(email: string) {
+  if (!supabase) {
+    return { error: new Error('Supabase is not configured.') };
+  }
+  return supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: Linking.createURL('auth/reset-password') });
 }
 
 export async function signOut() {

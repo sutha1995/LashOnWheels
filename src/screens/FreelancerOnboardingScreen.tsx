@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import * as Location from 'expo-location';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
@@ -17,6 +18,7 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [maxTravelDistance, setMaxTravelDistance] = useState('10');
   const [travelFee, setTravelFee] = useState('0');
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
+  const [baseCoordinates, setBaseCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [isPickingPhoto, setIsPickingPhoto] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -57,6 +59,9 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         setMaxTravelDistance(String(result.profile.max_travel_distance_km));
         setTravelFee(String(result.profile.travel_fee));
         setProfilePhotoUrl(result.profile.profile_photo_url);
+        if (result.profile.base_latitude !== null && result.profile.base_longitude !== null) {
+          setBaseCoordinates({ latitude: result.profile.base_latitude, longitude: result.profile.base_longitude });
+        }
       }
       setIsLoading(false);
     });
@@ -108,6 +113,8 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       max_travel_distance_km: maxDistance,
       travel_fee: fee,
       profile_photo_url: profilePhotoUrl,
+      base_latitude: baseCoordinates?.latitude ?? null,
+      base_longitude: baseCoordinates?.longitude ?? null,
     });
     setIsSaving(false);
     if (result.error) {
@@ -115,6 +122,13 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       return;
     }
     navigation.goBack();
+  };
+
+  const setCurrentBaseLocation = async () => {
+    const permission = await Location.requestForegroundPermissionsAsync();
+    if (permission.status !== 'granted') { setError('Location permission is required to set your search location.'); return; }
+    const current = await Location.getCurrentPositionAsync({});
+    setBaseCoordinates({ latitude: current.coords.latitude, longitude: current.coords.longitude });
   };
 
   const handleChoosePhoto = async () => {
@@ -187,6 +201,9 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         multiline
         style={[styles.input, styles.multilineInput]}
       />
+      <Pressable style={styles.photoButton} onPress={() => void setCurrentBaseLocation()}>
+        <Text style={styles.photoButtonText}>{baseCoordinates ? 'Search location saved' : 'Set search location'}</Text>
+      </Pressable>
       <TextInput
         placeholder="Years of experience"
         value={experienceYears}

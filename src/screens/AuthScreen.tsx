@@ -6,7 +6,7 @@ import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
 import { clearPendingSignupRole, setPendingSignupRole } from '../lib/profile';
-import { signInWithEmail, signInWithGoogle, signUpWithEmail } from '../services/auth';
+import { requestPasswordReset, signInWithEmail, signInWithGoogle, signUpWithEmail } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
 
@@ -16,6 +16,7 @@ export function AuthScreen({ navigation }: Props) {
   const [loginRole, setLoginRole] = useState<'customer' | 'freelancer'>('customer');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,7 +53,7 @@ export function AuthScreen({ navigation }: Props) {
       const result =
         mode === 'login'
           ? await signInWithEmail(email, password)
-          : await signUpWithEmail(email, password, fullName, role);
+          : await signUpWithEmail(email, password, fullName, phone, role);
 
       if (result.error) {
         setAuthError(result.error.message);
@@ -71,6 +72,13 @@ export function AuthScreen({ navigation }: Props) {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePasswordReset = async () => {
+    setAuthError('');
+    if (!email.trim()) { setAuthError('Enter your email address first.'); return; }
+    const { error } = await requestPasswordReset(email);
+    setAuthError(error ? error.message : 'Password-reset instructions have been sent to your email.');
   };
 
   const handleGoogleSignIn = async () => {
@@ -101,6 +109,9 @@ export function AuthScreen({ navigation }: Props) {
       <Text style={styles.subtitle}>Book beautiful lash services at home.</Text>
       {mode === 'register' && (
         <TextInput placeholder="Full name" value={fullName} onChangeText={setFullName} style={styles.input} />
+      )}
+      {mode === 'register' && (
+        <TextInput placeholder="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={styles.input} />
       )}
       <TextInput
         placeholder="Email address"
@@ -158,6 +169,11 @@ export function AuthScreen({ navigation }: Props) {
         </Text>
       </Pressable>
       {!!authError && <Text style={styles.errorText}>{authError}</Text>}
+      {mode === 'login' && (
+        <Pressable onPress={() => void handlePasswordReset()}>
+          <Text style={styles.link}>Forgot your password?</Text>
+        </Pressable>
+      )}
       <Text style={styles.orLabel}>OR</Text>
       <Pressable
         accessibilityRole="button"

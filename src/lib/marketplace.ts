@@ -1,4 +1,5 @@
 import type { FreelancerAvailability } from './availability';
+import { calculateDistanceKm } from './bookingRules';
 import { addMinutesToTime, getAvailabilityDayOfWeek, isValidDate, isValidTime, timeToMinutes } from './datetime';
 import type { FreelancerProfile } from './profile';
 import { getPortfolioPhotos, type PortfolioPhoto } from './portfolio';
@@ -7,7 +8,7 @@ import { supabase } from './supabase';
 
 export type MarketplaceFreelancer = Pick<
   FreelancerProfile,
-  'id' | 'display_name' | 'bio' | 'experience_years' | 'service_area' | 'travel_fee' | 'profile_photo_url' | 'onboarding_completed'
+  'id' | 'display_name' | 'bio' | 'experience_years' | 'service_area' | 'travel_fee' | 'profile_photo_url' | 'onboarding_completed' | 'base_latitude' | 'base_longitude'
 >;
 
 export type FreelancerServiceOffering = {
@@ -25,6 +26,7 @@ export type MarketplaceListing = FreelancerServiceOffering & {
   freelancer: MarketplaceFreelancer;
   rating: FreelancerRating;
   completedBookings: number;
+  distanceKm: number | null;
 };
 
 export type MarketplaceSearchFilters = {
@@ -32,9 +34,11 @@ export type MarketplaceSearchFilters = {
   locationQuery?: string;
   scheduledDate?: string;
   startTime?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
-export type MarketplaceSortOption = 'recommended' | 'rating' | 'price';
+export type MarketplaceSortOption = 'recommended' | 'rating' | 'price' | 'distance';
 
 type FreelancerServiceRow = {
   id: string;
@@ -74,6 +78,9 @@ function sortListings(listings: MarketplaceListing[], sort: MarketplaceSortOptio
   if (sort === 'rating') {
     return [...listings].sort((a, b) => ratingValue(b) - ratingValue(a) || b.rating.reviewCount - a.rating.reviewCount);
   }
+  if (sort === 'distance') {
+    return [...listings].sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity));
+  }
   return [...listings].sort(
     (a, b) => ratingValue(b) - ratingValue(a) || b.completedBookings - a.completedBookings || a.price - b.price,
   );
@@ -86,7 +93,7 @@ export async function searchMarketplace(filters: MarketplaceSearchFilters = {}, 
 
   let servicesQuery = supabase
     .from('freelancer_services')
-    .select('id, service_id, description, duration_minutes, price, service:services(id, name, description, duration_minutes, base_price)')
+    .select('id, freelancer_id, service_id, description, duration_minutes, price, service:services(id, name, description, duration_minutes, base_price)')
     .eq('active', true);
   if (filters.serviceId) {
     servicesQuery = servicesQuery.eq('service_id', filters.serviceId);
@@ -108,7 +115,7 @@ export async function searchMarketplace(filters: MarketplaceSearchFilters = {}, 
   const [profilesResult, ratingsResult, completedResult, availabilityResult] = await Promise.all([
     supabase
       .from('freelancer_profiles')
-      .select('id, display_name, bio, experience_years, service_area, travel_fee, profile_photo_url, onboarding_completed')
+      .select('id, display_name, bio, experience_years, service_area, travel_fee, profile_photo_url, onboarding_completed, base_latitude, base_longitude')
       .in('id', freelancerIds),
     supabase.from('freelancer_rating_summaries').select('freelancer_id, average_rating, review_count').in('freelancer_id', freelancerIds),
     supabase.from('freelancer_completed_booking_summaries').select('freelancer_id, completed_bookings').in('freelancer_id', freelancerIds),
@@ -184,6 +191,7 @@ export async function searchMarketplace(filters: MarketplaceSearchFilters = {}, 
       freelancer,
       rating: ratingsByFreelancer.get(freelancer.id) ?? noRating,
       completedBookings: completedByFreelancer.get(freelancer.id) ?? 0,
+      distanceKm: filters.latitude === undefined || filters.longitude === undefined ? null : calculateDistanceKm(filters.latitude, filters.longitude, freelancer.base_latitude, freelancer.base_longitude),
     });
   }
 
@@ -206,7 +214,7 @@ export async function getFreelancerMarketplaceProfile(freelancerId: string) {
   const [profileResult, servicesResult, ratingResult, completedResult, portfolioResult] = await Promise.all([
     supabase
       .from('freelancer_profiles')
-      .select('id, display_name, bio, experience_years, service_area, travel_fee, profile_photo_url, onboarding_completed')
+      .select('id, display_name, bio, experience_years, service_area, travel_fee, profile_photo_url, onboarding_completed, base_latitude, base_longitude')
       .eq('id', freelancerId)
       .maybeSingle(),
     supabase

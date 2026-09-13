@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import * as Linking from 'expo-linking';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
-import { cancelBooking, createStripeCheckoutSession, getCustomerBookings, type Booking } from '../lib/bookings';
+import { cancelBooking, createStripeCheckoutSession, getCustomerBookings, rescheduleBooking, type Booking } from '../lib/bookings';
 import { supabase } from '../lib/supabase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CustomerBookings'>;
@@ -67,6 +67,10 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingBookingId, setCancellingBookingId] = useState('');
   const [payingBookingId, setPayingBookingId] = useState('');
+  const [reschedulingBookingId, setReschedulingBookingId] = useState('');
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleStartTime, setRescheduleStartTime] = useState('');
+  const [rescheduleEndTime, setRescheduleEndTime] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -157,7 +161,8 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
               </View>
               <Text style={[styles.status, styles[`status_${booking.status}`]]}>{statusLabels[booking.status]}</Text>
             </View>
-            <Text style={styles.price}>RM{booking.price.toFixed(2)}</Text>
+            <Text style={styles.price}>RM{(booking.total_amount ?? booking.price).toFixed(2)}</Text>
+            {!!booking.travel_fee && <Text style={styles.meta}>Includes RM{booking.travel_fee.toFixed(2)} travel fee</Text>}
             <Text style={styles.meta}>{booking.duration_minutes} minutes</Text>
             <Text style={[styles.paymentStatus, styles[`payment_${booking.payment_status}`]]}>
               {paymentStatusLabels[booking.payment_status]}
@@ -217,6 +222,41 @@ export function CustomerBookingsScreen({ navigation, route }: Props) {
                   {cancellingBookingId === booking.id ? 'Cancelling…' : 'Cancel booking'}
                 </Text>
               </Pressable>
+            )}
+            {!isPreview && (booking.status === 'pending' || booking.status === 'confirmed') && (
+              <>
+                <Pressable
+                  style={styles.secondaryButton}
+                  onPress={() => {
+                    setReschedulingBookingId(reschedulingBookingId === booking.id ? '' : booking.id);
+                    setRescheduleDate(booking.scheduled_date);
+                    setRescheduleStartTime(booking.start_time);
+                    setRescheduleEndTime(booking.end_time);
+                  }}
+                >
+                  <Text style={styles.secondaryButtonText}>Reschedule booking</Text>
+                </Pressable>
+                {reschedulingBookingId === booking.id && (
+                  <View style={styles.rescheduleCard}>
+                    <TextInput value={rescheduleDate} onChangeText={setRescheduleDate} placeholder="YYYY-MM-DD" style={styles.input} />
+                    <TextInput value={rescheduleStartTime} onChangeText={setRescheduleStartTime} placeholder="Start time" style={styles.input} />
+                    <TextInput value={rescheduleEndTime} onChangeText={setRescheduleEndTime} placeholder="End time" style={styles.input} />
+                    <Pressable
+                      style={styles.payButton}
+                      onPress={() => {
+                        setActionError('');
+                        void rescheduleBooking(booking.id, { scheduled_date: rescheduleDate, start_time: rescheduleStartTime, end_time: rescheduleEndTime }).then((result) => {
+                          if (result.error || !result.booking) { setActionError(result.error?.message ?? 'Unable to reschedule this booking.'); return; }
+                          setBookings((current) => current.map((item) => item.id === booking.id ? result.booking! : item));
+                          setReschedulingBookingId('');
+                        });
+                      }}
+                    >
+                      <Text style={styles.payButtonText}>Confirm new time</Text>
+                    </Pressable>
+                  </View>
+                )}
+              </>
             )}
             {booking.status === 'confirmed' && (
               <Pressable
@@ -322,4 +362,6 @@ const styles = StyleSheet.create({
   emptyBody: { color: theme.colors.muted, lineHeight: 20, marginTop: 6 },
   secondaryButton: { borderColor: theme.colors.border, borderRadius: 14, borderWidth: 1, marginTop: 24, padding: 15 },
   secondaryButtonText: { color: theme.colors.accent, fontWeight: '700', textAlign: 'center' },
+  rescheduleCard: { backgroundColor: theme.colors.cream, borderRadius: 10, marginTop: 12, padding: 12 },
+  input: { backgroundColor: theme.colors.white, borderColor: theme.colors.border, borderRadius: 8, borderWidth: 1, color: theme.colors.ink, marginBottom: 8, padding: 10 },
 });

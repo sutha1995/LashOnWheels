@@ -165,8 +165,11 @@ export function DashboardScreen({ navigation, route }: Props) {
       </View>
       {role === 'admin' && (
         <View style={styles.previewSection}>
-          <Text style={styles.previewTitle}>Booking oversight</Text>
-          <Text style={styles.previewBody}>Review every customer appointment and its current lifecycle status.</Text>
+          <Text style={styles.previewTitle}>Platform operations</Text>
+          <Text style={styles.previewBody}>Verify freelancers, suspend accounts, manage services, and review platform totals.</Text>
+          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('AdminControls')}>
+            <Text style={styles.primaryButtonText}>Open admin controls</Text>
+          </Pressable>
           <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('AdminBookings')}>
             <Text style={styles.primaryButtonText}>Review all bookings</Text>
           </Pressable>

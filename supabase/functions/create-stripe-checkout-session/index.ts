@@ -34,7 +34,7 @@ Deno.serve(async (request) => {
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
     const { data: booking, error: bookingError } = await adminClient
       .from('bookings')
-      .select('id, customer_id, service_name, price, status, payment_status')
+      .select('id, customer_id, service_name, total_amount, price, status, payment_status')
       .eq('id', bookingId)
       .maybeSingle();
 
@@ -51,7 +51,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'This booking is not available for payment.' }, 400);
     }
 
-    const amount = Math.round(Number(booking.price) * 100);
+    const amount = Math.round(Number(booking.total_amount ?? booking.price) * 100);
     if (!Number.isSafeInteger(amount) || amount <= 0) {
       return jsonResponse({ error: 'This booking has an invalid payment amount.' }, 400);
     }

@@ -25,6 +25,12 @@ export type Booking = {
   price: number;
   duration_minutes: number;
   customer_note: string;
+  service_address?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  travel_fee?: number;
+  total_amount?: number;
+  reschedule_count?: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   payment_status: 'unpaid' | 'pending' | 'paid' | 'failed' | 'refunded';
   created_at: string;
@@ -76,7 +82,15 @@ export async function getMarketplaceServices() {
 
 export async function createBooking(
   serviceId: string,
-  values: { scheduled_date: string; start_time: string; end_time: string; customer_note: string },
+  values: {
+    scheduled_date: string;
+    start_time: string;
+    end_time: string;
+    customer_note: string;
+    service_address: string;
+    latitude: number;
+    longitude: number;
+  },
 ) {
   if (!supabase) {
     return { booking: null, error: new Error('Supabase is not configured.') };
@@ -88,6 +102,9 @@ export async function createBooking(
     p_start_time: values.start_time,
     p_end_time: values.end_time,
     p_customer_note: values.customer_note,
+    p_service_address: values.service_address,
+    p_latitude: values.latitude,
+    p_longitude: values.longitude,
   });
 
   return { booking: data as Booking | null, error };
@@ -101,7 +118,7 @@ export async function getFreelancerBookings(userId: string) {
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
+      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, service_address, latitude, longitude, travel_fee, total_amount, reschedule_count, status, payment_status, created_at',
     )
     .eq('freelancer_id', userId)
     .order('scheduled_date', { ascending: true })
@@ -123,7 +140,7 @@ export async function getFreelancerEarningsBookings(userId: string) {
     let query = supabase
       .from('bookings')
       .select(
-        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
+        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, service_address, latitude, longitude, travel_fee, total_amount, reschedule_count, status, payment_status, created_at',
       )
       .eq('freelancer_id', userId)
       .order('scheduled_date', { ascending: true })
@@ -165,7 +182,7 @@ export async function getCustomerBookings(userId: string) {
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
+      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, service_address, latitude, longitude, travel_fee, total_amount, reschedule_count, status, payment_status, created_at',
     )
     .eq('customer_id', userId)
     .order('scheduled_date', { ascending: false })
@@ -187,7 +204,7 @@ export async function getAdminBookings() {
     let query = supabase
       .from('bookings')
       .select(
-        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, status, payment_status, created_at',
+        'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, service_address, latitude, longitude, travel_fee, total_amount, reschedule_count, status, payment_status, created_at',
       )
       .order('scheduled_date', { ascending: true })
       .order('start_time', { ascending: true })
@@ -226,6 +243,17 @@ export async function cancelBooking(bookingId: string) {
   }
 
   const { data, error } = await supabase.rpc('cancel_booking', { p_booking_id: bookingId });
+  return { booking: data as Booking | null, error };
+}
+
+export async function rescheduleBooking(
+  bookingId: string,
+  values: { scheduled_date: string; start_time: string; end_time: string },
+) {
+  if (!supabase) {
+    return { booking: null, error: new Error('Supabase is not configured.') };
+  }
+  const { data, error } = await supabase.rpc('reschedule_booking', { p_booking_id: bookingId, ...values });
   return { booking: data as Booking | null, error };
 }
 

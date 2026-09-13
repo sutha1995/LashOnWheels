@@ -8,6 +8,7 @@ import logo from './assets/lash-on-wheels-logo.png';
 import { theme } from './src/constants/theme';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { AdminBookingsScreen } from './src/screens/AdminBookingsScreen';
+import { AdminControlsScreen } from './src/screens/AdminControlsScreen';
 import { DashboardScreen } from './src/screens/DashboardScreen';
 import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { CustomerBookingsScreen } from './src/screens/CustomerBookingsScreen';
@@ -46,6 +47,7 @@ export type RootStackParamList = {
   FreelancerEarnings: { preview?: boolean } | undefined;
   Admin: { role: 'admin'; preview?: boolean };
   AdminBookings: undefined;
+  AdminControls: undefined;
   Notifications: { preview?: boolean } | undefined;
   LocationTracking: { bookingId?: string; freelancerId?: string; preview?: boolean } | undefined;
 };
@@ -180,6 +182,7 @@ export default function App() {
         <Stack.Screen name="FreelancerEarnings" component={FreelancerEarningsScreen} options={{ title: 'Earnings' }} />
         <Stack.Screen name="Admin" component={DashboardScreen} initialParams={{ role: 'admin' }} />
         <Stack.Screen name="AdminBookings" component={AdminBookingsScreen} options={{ title: 'All bookings' }} />
+        <Stack.Screen name="AdminControls" component={AdminControlsScreen} options={{ title: 'Platform operations' }} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
         <Stack.Screen
           name="LocationTracking"
