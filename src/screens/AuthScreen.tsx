@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
-import { clearPendingSignupRole, setPendingSignupRole } from '../lib/profile';
+import { clearPendingSignupRole, ensureProfile, setPendingSignupRole } from '../lib/profile';
 import { requestPasswordReset, signInWithEmail, signInWithGoogle, signUpWithEmail } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
@@ -62,6 +62,17 @@ export function AuthScreen({ navigation }: Props) {
 
       if (mode === 'register' && result.needsConfirmation) {
         setAuthError('Check your email to confirm your account before signing in.');
+        return;
+      }
+
+      if (!result.user) {
+        setAuthError('We could not load your account. Please sign in and try again.');
+        return;
+      }
+
+      const profileResult = await ensureProfile(result.user);
+      if (profileResult.error) {
+        setAuthError(profileResult.error.message);
         return;
       }
 
