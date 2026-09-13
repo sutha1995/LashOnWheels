@@ -141,6 +141,17 @@ export function DashboardScreen({ navigation, route }: Props) {
       <Text style={styles.eyebrow}>{content.eyebrow}</Text>
       <Text style={styles.title}>{content.title}</Text>
       <Text style={styles.body}>{content.body}</Text>
+      {role === 'customer' && !isPreview && (
+        <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>Offer lash services?</Text>
+          <Text style={styles.previewBody}>
+            Create your freelancer profile to manage your availability, services, bookings, and earnings.
+          </Text>
+          <Pressable style={styles.primaryButton} onPress={() => void becomeFreelancer()}>
+            <Text style={styles.primaryButtonText}>Become a freelancer</Text>
+          </Pressable>
+        </View>
+      )}
       <View style={styles.section}>
         {role === 'freelancer' &&
           copy.freelancer.cards.map((card) => (
@@ -191,9 +202,6 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.secondaryButtonText}>View notifications</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => void becomeFreelancer()}>
-            <Text style={styles.secondaryButtonText}>Become a freelancer</Text>
           </Pressable>
           <View style={styles.previewSection}>
             <Text style={styles.previewTitle}>Freelancer workspace</Text>
