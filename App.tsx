@@ -132,7 +132,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        key={hasSession ? 'authenticated' : 'anonymous'}
+        key={hasSession ? `authenticated-${role}-${requestedRole}` : 'anonymous'}
         initialRouteName={
           hasSession
             ? role === 'admin'
