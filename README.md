@@ -98,7 +98,7 @@ The freelancer profile screen can request an editable AI bio draft. Deploy the `
 
 ```bash
 supabase functions deploy ai-assist
-supabase secrets set NEBIUS_API_KEY=... NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1/ NEBIUS_MODEL=deepseek-ai/DeepSeek-V4-Pro-0813
+supabase secrets set NEBIUS_API_KEY=... NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1/ NEBIUS_MODEL=deepseek-ai/DeepSeek-V4-Pro-0813 EXA_API_KEY=...
 ```
 
 Apply the freelancer profile, service catalog, availability, booking, payment-status, notification, location, review, messaging, marketplace summary, and portfolio migrations before using these flows with real accounts. The portfolio migration also creates the `portfolio` storage bucket with row level security policies; do not change it to a private bucket without also updating photo URL handling.

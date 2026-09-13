@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { pickProfilePhotoUrl } from '../lib/portfolio';
-import { draftFreelancerBio } from '../lib/ai';
+import { draftFreelancerBio, researchLashTrends, type ResearchSource } from '../lib/ai';
 import { getFreelancerProfile, getProfile, saveFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
@@ -25,6 +25,9 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isDraftingBio, setIsDraftingBio] = useState(false);
+  const [trendIdeas, setTrendIdeas] = useState('');
+  const [trendSources, setTrendSources] = useState<ResearchSource[]>([]);
+  const [isResearchingTrends, setIsResearchingTrends] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -168,6 +171,17 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
     setBio(result.draft);
   };
 
+  const handleResearchTrends = async () => {
+    setError('');
+    if (!serviceArea.trim()) { setError('Add your service area first.'); return; }
+    setIsResearchingTrends(true);
+    const result = await researchLashTrends(`Service area: ${serviceArea.trim()}. Artist name: ${displayName.trim() || 'Mobile lash artist'}.`);
+    setIsResearchingTrends(false);
+    if (result.error || !result.draft) { setError(result.error?.message ?? 'Unable to research lash trends.'); return; }
+    setTrendIdeas(result.draft);
+    setTrendSources(result.sources);
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -216,6 +230,16 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       <Pressable style={styles.photoButton} disabled={isDraftingBio} onPress={() => void handleDraftBio()}>
         <Text style={styles.photoButtonText}>{isDraftingBio ? 'Drafting…' : 'Draft bio with AI'}</Text>
       </Pressable>
+      <Pressable style={styles.photoButton} disabled={isResearchingTrends} onPress={() => void handleResearchTrends()}>
+        <Text style={styles.photoButtonText}>{isResearchingTrends ? 'Researching…' : 'Research lash trends'}</Text>
+      </Pressable>
+      {!!trendIdeas && (
+        <View style={styles.researchCard}>
+          <Text style={styles.researchTitle}>Content ideas</Text>
+          <Text style={styles.researchBody}>{trendIdeas}</Text>
+          {!!trendSources.length && <Text style={styles.researchSources}>Sources: {trendSources.map((source) => source.title).join(' · ')}</Text>}
+        </View>
+      )}
       <Pressable style={styles.photoButton} onPress={() => void setCurrentBaseLocation()}>
         <Text style={styles.photoButtonText}>{baseCoordinates ? 'Search location saved' : 'Set search location'}</Text>
       </Pressable>
@@ -288,6 +312,10 @@ const styles = StyleSheet.create({
   photoActions: { flex: 1, marginLeft: 16 },
   photoButton: { backgroundColor: theme.colors.ink, borderRadius: 12, padding: 14 },
   photoButtonText: { color: theme.colors.white, fontWeight: '700', textAlign: 'center' },
+  researchCard: { backgroundColor: theme.colors.white, borderColor: theme.colors.border, borderRadius: 12, borderWidth: 1, marginTop: 12, padding: 14 },
+  researchTitle: { color: theme.colors.ink, fontWeight: '800' },
+  researchBody: { color: theme.colors.muted, lineHeight: 20, marginTop: 8 },
+  researchSources: { color: theme.colors.muted, fontSize: 12, marginTop: 10 },
   photoRemoveButton: { borderColor: theme.colors.border, borderRadius: 12, borderWidth: 1, marginTop: 10, padding: 12 },
   photoRemoveButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },
   sectionLabel: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginBottom: 12, marginTop: 10 },
