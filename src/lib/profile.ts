@@ -44,6 +44,14 @@ export async function saveProfile(user: User, fullName: string, phone: string, r
   return { profile: data as Profile | null, error };
 }
 
+export async function requestFreelancerAccess() {
+  if (!supabase) {
+    return { profile: null, error: new Error('Supabase is not configured.') };
+  }
+  const { data, error } = await supabase.rpc('request_freelancer_access');
+  return { profile: data as Profile | null, error };
+}
+
 export async function getProfile(userId: string) {
   if (!supabase) {
     return { profile: null, error: new Error('Supabase is not configured.') };

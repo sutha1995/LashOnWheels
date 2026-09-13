@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
-import { getFreelancerProfile } from '../lib/profile';
+import { getFreelancerProfile, requestFreelancerAccess } from '../lib/profile';
 import { getServiceCatalog, type Service } from '../lib/serviceCatalog';
 import { supabase } from '../lib/supabase';
 import { signOut } from '../services/auth';
@@ -67,6 +67,8 @@ export function DashboardScreen({ navigation, route }: Props) {
   const [serviceAccessError, setServiceAccessError] = useState('');
   const [catalogServices, setCatalogServices] = useState<Service[]>([]);
   const [catalogError, setCatalogError] = useState('');
+  const [signOutError, setSignOutError] = useState('');
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const role = route.params?.role ?? 'customer';
   const isPreview = route.params?.preview ?? false;
   const content = copy[role];
@@ -118,6 +120,20 @@ export function DashboardScreen({ navigation, route }: Props) {
     }
 
     navigation.navigate('FreelancerServices');
+  };
+
+  const becomeFreelancer = async () => {
+    if (!supabase) {
+      navigation.navigate('Freelancer', { role: 'freelancer', preview: true });
+      return;
+    }
+    const result = await requestFreelancerAccess();
+    if (result.error) {
+      setServiceAccessError(result.error.message);
+      return;
+    }
+    Alert.alert('Freelancer access enabled', 'Complete your profile next. Your services will remain hidden until an admin approves your freelancer profile.');
+    navigation.reset({ index: 0, routes: [{ name: 'Freelancer', params: { role: 'freelancer' } }] });
   };
 
   return (
@@ -176,6 +192,16 @@ export function DashboardScreen({ navigation, route }: Props) {
           <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
             <Text style={styles.secondaryButtonText}>View notifications</Text>
           </Pressable>
+          <Pressable style={styles.secondaryButton} onPress={() => void becomeFreelancer()}>
+            <Text style={styles.secondaryButtonText}>Become a freelancer</Text>
+          </Pressable>
+          <View style={styles.previewSection}>
+            <Text style={styles.previewTitle}>Freelancer workspace</Text>
+            <Text style={styles.previewBody}>Explore the freelancer tools with sample data. This does not change your account role.</Text>
+            <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Freelancer', { role: 'freelancer', preview: true })}>
+              <Text style={styles.secondaryButtonText}>Preview freelancer workspace</Text>
+            </Pressable>
+          </View>
         </View>
       )}
       {role === 'admin' && (
@@ -308,17 +334,28 @@ export function DashboardScreen({ navigation, route }: Props) {
       ) : (
         <Pressable
           style={styles.signOutButton}
+          disabled={isSigningOut}
           onPress={() => {
             if (!hasSupabaseConfig) {
               navigation.replace('Welcome');
               return;
             }
-            void signOut();
+            setSignOutError('');
+            setIsSigningOut(true);
+            void signOut().then((result) => {
+              setIsSigningOut(false);
+              if (result.error) {
+                setSignOutError(result.error.message);
+                return;
+              }
+              navigation.reset({ index: 0, routes: [{ name: 'Welcome' }] });
+            });
           }}
         >
-          <Text style={styles.signOutText}>Sign out</Text>
+          <Text style={styles.signOutText}>{isSigningOut ? 'Signing out…' : 'Sign out'}</Text>
         </Pressable>
       )}
+      {!!signOutError && <Text style={styles.errorText}>{signOutError}</Text>}
     </ScrollView>
   );
 }
