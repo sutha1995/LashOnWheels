@@ -3,3 +3,6 @@ verify_jwt = false
 
 [functions.booking-reminders]
 verify_jwt = false
+
+[functions.ai-assist]
+verify_jwt = false

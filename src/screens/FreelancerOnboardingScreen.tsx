@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { pickProfilePhotoUrl } from '../lib/portfolio';
+import { draftFreelancerBio } from '../lib/ai';
 import { getFreelancerProfile, getProfile, saveFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
@@ -23,6 +24,7 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDraftingBio, setIsDraftingBio] = useState(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -156,6 +158,16 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
     }
   };
 
+  const handleDraftBio = async () => {
+    setError('');
+    if (!displayName.trim() || !serviceArea.trim()) { setError('Add your display name and service area first.'); return; }
+    setIsDraftingBio(true);
+    const result = await draftFreelancerBio(`Name: ${displayName.trim()}\nService area: ${serviceArea.trim()}\nExperience: ${experienceYears} years\nCurrent bio: ${bio.trim() || 'None'}`);
+    setIsDraftingBio(false);
+    if (result.error || !result.draft) { setError(result.error?.message ?? 'Unable to draft a bio.'); return; }
+    setBio(result.draft);
+  };
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -201,6 +213,9 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         multiline
         style={[styles.input, styles.multilineInput]}
       />
+      <Pressable style={styles.photoButton} disabled={isDraftingBio} onPress={() => void handleDraftBio()}>
+        <Text style={styles.photoButtonText}>{isDraftingBio ? 'Drafting…' : 'Draft bio with AI'}</Text>
+      </Pressable>
       <Pressable style={styles.photoButton} onPress={() => void setCurrentBaseLocation()}>
         <Text style={styles.photoButtonText}>{baseCoordinates ? 'Search location saved' : 'Set search location'}</Text>
       </Pressable>

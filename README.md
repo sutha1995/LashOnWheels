@@ -92,4 +92,13 @@ supabase functions deploy booking-reminders
 supabase secrets set BOOKING_REMINDER_CRON_SECRET=replace-with-a-long-random-value
 ```
 
+## AI drafting
+
+The freelancer profile screen can request an editable AI bio draft. Deploy the `ai-assist` function and keep the Nebius credentials server-side:
+
+```bash
+supabase functions deploy ai-assist
+supabase secrets set NEBIUS_API_KEY=... NEBIUS_BASE_URL=https://api.tokenfactory.nebius.com/v1/ NEBIUS_MODEL=deepseek-ai/DeepSeek-V4-Pro-0813
+```
+
 Apply the freelancer profile, service catalog, availability, booking, payment-status, notification, location, review, messaging, marketplace summary, and portfolio migrations before using these flows with real accounts. The portfolio migration also creates the `portfolio` storage bucket with row level security policies; do not change it to a private bucket without also updating photo URL handling.
