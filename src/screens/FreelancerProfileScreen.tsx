@@ -51,7 +51,11 @@ const previewProfile: FreelancerMarketplaceProfile = {
       },
     },
   ],
-  portfolio: [],
+  portfolio: [
+    { id: 'preview-portfolio-1', freelancer_id: 'preview-freelancer-1', photo_url: 'https://images.unsplash.com/photo-1487412912498-0447578fcca8?auto=format&fit=crop&w=600&q=80', storage_path: 'preview/classic.jpg', caption: 'Soft, everyday definition.', style_tag: 'Classic · Natural', position: 0, created_at: '2026-09-14T09:00:00Z' },
+    { id: 'preview-portfolio-2', freelancer_id: 'preview-freelancer-1', photo_url: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=600&q=80', storage_path: 'preview/hybrid.jpg', caption: 'Textured finish with light fans.', style_tag: 'Hybrid · Wispy', position: 1, created_at: '2026-09-14T09:00:00Z' },
+    { id: 'preview-portfolio-3', freelancer_id: 'preview-freelancer-1', photo_url: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=600&q=80', storage_path: 'preview/lift.jpg', caption: 'Natural lift and tint result.', style_tag: 'Lash Lift + Tint', position: 2, created_at: '2026-09-14T09:00:00Z' },
+  ],
   rating: { averageRating: 4.9, reviewCount: 27 },
   completedBookings: 31,
 };

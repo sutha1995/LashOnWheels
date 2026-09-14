@@ -46,6 +46,7 @@ const previewCatalogServices: Service[] = [
     description: 'A natural curl and lift for your lashes.',
     duration_minutes: 60,
     base_price: 80,
+    catalog_image_url: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'preview-service-lash-tint',
@@ -53,6 +54,7 @@ const previewCatalogServices: Service[] = [
     description: 'A rich tint to define your natural lashes.',
     duration_minutes: 30,
     base_price: 45,
+    catalog_image_url: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'preview-service-classic',
@@ -60,6 +62,7 @@ const previewCatalogServices: Service[] = [
     description: 'Lightweight one-to-one extensions for everyday definition.',
     duration_minutes: 120,
     base_price: 120,
+    catalog_image_url: 'https://images.unsplash.com/photo-1487412912498-0447578fcca8?auto=format&fit=crop&w=900&q=80',
   },
 ];
 
