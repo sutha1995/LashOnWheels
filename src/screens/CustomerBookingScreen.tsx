@@ -18,6 +18,9 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
   const [customerNote, setCustomerNote] = useState('');
+  const [allergies, setAllergies] = useState('');
+  const [medications, setMedications] = useState('');
+  const [healthDisclosureConsent, setHealthDisclosureConsent] = useState(false);
   const [serviceAddress, setServiceAddress] = useState('');
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState('');
@@ -92,6 +95,10 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
       setError('Use your current location to confirm the service location.');
       return;
     }
+    if ((allergies.trim() || medications.trim()) && !healthDisclosureConsent) {
+      setError('Confirm consent before sharing allergies or medications with the assigned freelancer.');
+      return;
+    }
 
     setIsSaving(true);
     const result = await createBooking(selectedServiceId, {
@@ -101,6 +108,9 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
       customer_note: customerNote.trim(),
       service_address: serviceAddress.trim(),
       ...coordinates,
+      allergies: allergies.trim(),
+      medications: medications.trim(),
+      health_disclosure_consent: healthDisclosureConsent,
     });
     setIsSaving(false);
     if (result.error || !result.booking) {
@@ -192,6 +202,16 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
             multiline
             style={[styles.input, styles.multilineInput]}
           />
+          <Text style={styles.healthTitle}>Optional treatment information</Text>
+          <Text style={styles.healthBody}>Share only allergies or medications that may affect a lash treatment. This is not medical advice and is visible only to the assigned freelancer for this booking.</Text>
+          <Text style={styles.formLabel}>Relevant allergies</Text>
+          <TextInput value={allergies} onChangeText={setAllergies} placeholder="Optional" multiline style={[styles.input, styles.multilineInput]} />
+          <Text style={styles.formLabel}>Relevant medications</Text>
+          <TextInput value={medications} onChangeText={setMedications} placeholder="Optional" multiline style={[styles.input, styles.multilineInput]} />
+          <Pressable style={styles.consentRow} onPress={() => setHealthDisclosureConsent((value) => !value)}>
+            <Text style={styles.consentBox}>{healthDisclosureConsent ? '✓' : ''}</Text>
+            <Text style={styles.consentText}>I consent to share this information with the assigned freelancer for this appointment.</Text>
+          </Pressable>
           <Pressable style={styles.locationButton} onPress={() => void useCurrentLocation()}>
             <Text style={styles.locationButtonText}>
               {coordinates ? 'Service location confirmed' : 'Use my current location'}
@@ -252,6 +272,11 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   multilineInput: { minHeight: 76, textAlignVertical: 'top' },
+  healthTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginTop: 20 },
+  healthBody: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginTop: 6 },
+  consentRow: { alignItems: 'flex-start', flexDirection: 'row', gap: 10, marginTop: 12 },
+  consentBox: { borderColor: theme.colors.accent, borderRadius: 4, borderWidth: 1, color: theme.colors.accent, fontWeight: '800', height: 20, textAlign: 'center', width: 20 },
+  consentText: { color: theme.colors.muted, flex: 1, fontSize: 13, lineHeight: 19 },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 16, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   locationButton: { borderColor: theme.colors.border, borderRadius: 10, borderWidth: 1, marginTop: 12, padding: 12 },

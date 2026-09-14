@@ -218,6 +218,14 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
               {paymentStatusLabels[booking.payment_status]}
             </Text>
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
+            {!!booking.health_disclosure?.[0] && (
+              <View style={styles.healthCard}>
+                <Text style={styles.healthLabel}>CUSTOMER TREATMENT INFORMATION</Text>
+                <Text style={styles.healthHint}>Shared with consent for this appointment. Review before accepting; this is not medical advice.</Text>
+                <Text style={styles.healthValue}>Allergies: {booking.health_disclosure[0].allergies || 'None shared'}</Text>
+                <Text style={styles.healthValue}>Medications: {booking.health_disclosure[0].medications || 'None shared'}</Text>
+              </View>
+            )}
             {!!reviewsByBookingId[booking.id] && (
               <View style={styles.reviewCard}>
                 <Text style={styles.reviewLabel}>CUSTOMER FEEDBACK</Text>
@@ -326,6 +334,10 @@ const styles = StyleSheet.create({
   reviewLabel: { color: theme.colors.accent, fontSize: 10, fontWeight: '800', letterSpacing: 1 },
   reviewRating: { color: theme.colors.accent, fontSize: 20, letterSpacing: 1, marginTop: 6 },
   reviewComment: { color: theme.colors.muted, fontStyle: 'italic', lineHeight: 20, marginTop: 4 },
+  healthCard: { backgroundColor: '#FFF4E5', borderRadius: 12, marginTop: 16, padding: 14 },
+  healthLabel: { color: theme.colors.ink, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
+  healthHint: { color: theme.colors.muted, fontSize: 12, lineHeight: 17, marginTop: 6 },
+  healthValue: { color: theme.colors.ink, lineHeight: 20, marginTop: 8 },
   emptyCard: {
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.border,

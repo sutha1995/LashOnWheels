@@ -25,6 +25,7 @@ export type Booking = {
   price: number;
   duration_minutes: number;
   customer_note: string;
+  health_disclosure?: Array<{ allergies: string; medications: string; consented_at: string }>;
   service_address?: string;
   latitude?: number | null;
   longitude?: number | null;
@@ -90,6 +91,9 @@ export async function createBooking(
     service_address: string;
     latitude: number;
     longitude: number;
+    allergies: string;
+    medications: string;
+    health_disclosure_consent: boolean;
   },
 ) {
   if (!supabase) {
@@ -105,6 +109,9 @@ export async function createBooking(
     p_service_address: values.service_address,
     p_latitude: values.latitude,
     p_longitude: values.longitude,
+    p_allergies: values.allergies,
+    p_medications: values.medications,
+    p_health_disclosure_consent: values.health_disclosure_consent,
   });
 
   return { booking: data as Booking | null, error };
@@ -118,7 +125,7 @@ export async function getFreelancerBookings(userId: string) {
   const { data, error } = await supabase
     .from('bookings')
     .select(
-      'id, customer_id, freelancer_id, freelancer_service_id, scheduled_date, start_time, end_time, service_name, price, duration_minutes, customer_note, service_address, latitude, longitude, travel_fee, total_amount, reschedule_count, status, payment_status, created_at',
+      'id, customer_id, freelancer_id, scheduled_date, start_time, end_time, freelancer_service_id, service_name, price, duration_minutes, customer_note, service_address, latitude, longitude, travel_fee, total_amount, reschedule_count, status, payment_status, created_at, health_disclosure:booking_health_disclosures(allergies, medications, consented_at)',
     )
     .eq('freelancer_id', userId)
     .order('scheduled_date', { ascending: true })
