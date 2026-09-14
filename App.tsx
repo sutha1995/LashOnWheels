@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { NavigationContainer } from '@react-navigation/native';
+import { createNavigationContainerRef, NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -26,6 +26,7 @@ import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupportChatScreen } from './src/screens/SupportChatScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
+import { BottomNavigation } from './src/components/BottomNavigation';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
 
@@ -55,6 +56,7 @@ export type RootStackParamList = {
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 function WelcomeScreen({ navigation }: { navigation: { navigate: (screen: 'Auth') => void } }) {
   return (
@@ -75,6 +77,29 @@ export default function App() {
   const [hasSession, setHasSession] = useState(false);
   const [role, setRole] = useState<UserRole>('customer');
   const [requestedRole, setRequestedRole] = useState<'customer' | 'freelancer'>('customer');
+  const [activeRoute, setActiveRoute] = useState('');
+
+  const updateActiveRoute = () => {
+    setActiveRoute(navigationRef.getCurrentRoute()?.name ?? '');
+  };
+
+  const isFreelancerRoute = activeRoute.startsWith('Freelancer') || activeRoute === 'Portfolio';
+  const menuAudience = isFreelancerRoute || role === 'freelancer' || requestedRole === 'freelancer' ? 'freelancer' : 'customer';
+  const showBottomNavigation = hasSession && role !== 'admin' && !['Welcome', 'Auth'].includes(activeRoute);
+
+  const selectMenuItem = (target: 'home' | 'bookings' | 'updates' | 'help' | 'earnings' | 'profile') => {
+    if (menuAudience === 'customer') {
+      if (target === 'home') navigationRef.navigate('Customer', { role: 'customer' });
+      if (target === 'bookings') navigationRef.navigate('CustomerBookings');
+      if (target === 'updates') navigationRef.navigate('Notifications');
+      if (target === 'help') navigationRef.navigate('SupportChat');
+      return;
+    }
+    if (target === 'home') navigationRef.navigate('Freelancer', { role: 'freelancer' });
+    if (target === 'bookings') navigationRef.navigate('FreelancerBookings');
+    if (target === 'earnings') navigationRef.navigate('FreelancerEarnings');
+    if (target === 'profile') navigationRef.navigate('FreelancerOnboarding');
+  };
 
   useEffect(() => {
     if (!supabase) {
@@ -132,7 +157,8 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <View style={styles.appShell}>
+    <NavigationContainer ref={navigationRef} onReady={updateActiveRoute} onStateChange={updateActiveRoute}>
       <Stack.Navigator
         key={hasSession ? `authenticated-${role}-${requestedRole}` : 'anonymous'}
         initialRouteName={
@@ -194,10 +220,13 @@ export default function App() {
         <Stack.Screen name="SupportChat" component={SupportChatScreen} options={{ title: 'Help and support' }} />
       </Stack.Navigator>
     </NavigationContainer>
+    {showBottomNavigation && <BottomNavigation audience={menuAudience} activeRoute={activeRoute} onSelect={selectMenuItem} />}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  appShell: { flex: 1 },
   loadingContainer: { alignItems: 'center', backgroundColor: theme.colors.cream, flex: 1, justifyContent: 'center' },
   loadingText: { color: theme.colors.muted, fontSize: 16 },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
