@@ -46,15 +46,15 @@ const previewCatalogServices: Service[] = [
     description: 'A natural curl and lift for your lashes.',
     duration_minutes: 60,
     base_price: 80,
-    catalog_image_url: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=80',
+    catalog_image_url: 'https://images.unsplash.com/photo-1772235616130-b80e12f0ab7a?auto=format&fit=crop&w=900&q=80',
   },
   {
     id: 'preview-service-lash-tint',
-    name: 'Lash Tint',
-    description: 'A rich tint to define your natural lashes.',
-    duration_minutes: 30,
-    base_price: 45,
-    catalog_image_url: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=900&q=80',
+    name: 'Hybrid Lash Extension',
+    description: 'A balanced mix of classic lashes and light volume fans for soft texture.',
+    duration_minutes: 135,
+    base_price: 150,
+    catalog_image_url: 'https://images.pexels.com/photos/34930118/pexels-photo-34930118.jpeg?auto=compress&cs=tinysrgb&w=900',
   },
   {
     id: 'preview-service-classic',
@@ -62,7 +62,7 @@ const previewCatalogServices: Service[] = [
     description: 'Lightweight one-to-one extensions for everyday definition.',
     duration_minutes: 120,
     base_price: 120,
-    catalog_image_url: 'https://images.unsplash.com/photo-1487412912498-0447578fcca8?auto=format&fit=crop&w=900&q=80',
+    catalog_image_url: 'https://images.pexels.com/photos/7446922/pexels-photo-7446922.jpeg?auto=compress&cs=tinysrgb&w=900',
   },
 ];
 
