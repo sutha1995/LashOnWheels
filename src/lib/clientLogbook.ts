@@ -12,6 +12,8 @@ export type ClientLog = {
   mapping_notes: string;
   treatment_notes: string;
   photo_path: string | null;
+  before_photo_path: string | null;
+  after_photo_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -19,7 +21,7 @@ export type ClientLog = {
 export type ClientLogDraft = Omit<ClientLog, 'id' | 'freelancer_id' | 'created_at' | 'updated_at'>;
 
 const bucketName = 'client-logbook';
-const logColumns = 'id, freelancer_id, booking_id, extension_style, curl, length_mm, diameter_mm, mapping_notes, treatment_notes, photo_path, created_at, updated_at';
+const logColumns = 'id, freelancer_id, booking_id, extension_style, curl, length_mm, diameter_mm, mapping_notes, treatment_notes, photo_path, before_photo_path, after_photo_path, created_at, updated_at';
 
 function decodeBase64Image(base64: string) {
   return Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
@@ -41,15 +43,15 @@ export async function saveClientLog(freelancerId: string, draft: ClientLogDraft)
   return { log: data as ClientLog | null, error };
 }
 
-export async function pickClientLogPhoto(freelancerId: string, bookingId: string) {
+export async function captureClientLogPhoto(freelancerId: string, bookingId: string, phase: 'before' | 'after') {
   if (!supabase) return { photoPath: null, error: new Error('Supabase is not configured.') };
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) return { photoPath: null, error: new Error('Photo library permission is required to add a treatment photo.') };
-  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.7, base64: true });
+  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permission.granted) return { photoPath: null, error: new Error('Camera permission is required to capture treatment photos.') };
+  const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.7, base64: true });
   if (result.canceled || !result.assets.length) return { photoPath: null, error: null };
   const asset = result.assets[0];
   if (!asset.base64) return { photoPath: null, error: new Error('The selected photo could not be read.') };
-  const photoPath = `${freelancerId}/${bookingId}-${Date.now()}.jpg`;
+  const photoPath = `${freelancerId}/${bookingId}-${phase}-${Date.now()}.jpg`;
   const { error } = await supabase.storage.from(bucketName).upload(photoPath, decodeBase64Image(asset.base64), { contentType: 'image/jpeg', upsert: false });
   return { photoPath: error ? null : photoPath, error };
 }
