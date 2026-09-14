@@ -29,6 +29,7 @@ import { ClientLogbookScreen } from './src/screens/ClientLogbookScreen';
 import { TermsConditionsScreen } from './src/screens/TermsConditionsScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { BottomNavigation } from './src/components/BottomNavigation';
+import { AppLoadingScreen } from './src/components/AppLoadingScreen';
 import { ensureProfile, type UserRole } from './src/lib/profile';
 import { supabase } from './src/lib/supabase';
 
@@ -84,6 +85,8 @@ export default function App() {
   const [role, setRole] = useState<UserRole>('customer');
   const [requestedRole, setRequestedRole] = useState<'customer' | 'freelancer'>('customer');
   const [activeRoute, setActiveRoute] = useState('');
+  const [authLoadError, setAuthLoadError] = useState('');
+  const [authRetry, setAuthRetry] = useState(0);
 
   const updateActiveRoute = () => {
     setActiveRoute(navigationRef.getCurrentRoute()?.name ?? '');
@@ -124,6 +127,7 @@ export default function App() {
         setRole('customer');
         setRequestedRole('customer');
         setIsAuthLoading(false);
+        setAuthLoadError('');
         return;
       }
 
@@ -132,6 +136,13 @@ export default function App() {
       if (!isMounted || version !== authVersion) {
         return;
       }
+      if (!profile) {
+        setHasSession(true);
+        setAuthLoadError('Your account could not be loaded. Check your connection and try again.');
+        setIsAuthLoading(false);
+        return;
+      }
+      setAuthLoadError('');
       setHasSession(true);
       setRole(profile?.role ?? 'customer');
       setRequestedRole(profile?.requested_role ?? 'customer');
@@ -142,7 +153,7 @@ export default function App() {
       if (isMounted) {
         void updateAuthState(data.session?.user ?? null);
       }
-    });
+    }).catch(() => { if (isMounted) { setAuthLoadError('We could not connect to your account. Check your connection and try again.'); setIsAuthLoading(false); } });
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       void updateAuthState(session?.user ?? null);
@@ -152,14 +163,13 @@ export default function App() {
       isMounted = false;
       data.subscription.unsubscribe();
     };
-  }, []);
+  }, [authRetry]);
 
+  if (authLoadError) {
+    return <AppLoadingScreen error={authLoadError} onRetry={() => { setAuthLoadError(''); setIsAuthLoading(true); setAuthRetry((value) => value + 1); }} onSignIn={() => { setAuthLoadError(''); setHasSession(false); setIsAuthLoading(false); }} />;
+  }
   if (isAuthLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading…</Text>
-      </View>
-    );
+    return <AppLoadingScreen />;
   }
 
   return (
