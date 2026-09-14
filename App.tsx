@@ -17,6 +17,7 @@ import { BookingChatScreen } from './src/screens/BookingChatScreen';
 import { SearchScreen } from './src/screens/SearchScreen';
 import { FreelancerProfileScreen } from './src/screens/FreelancerProfileScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
+import { FreelancerProfileHubScreen } from './src/screens/FreelancerProfileHubScreen';
 import { FreelancerServicesScreen } from './src/screens/FreelancerServicesScreen';
 import { FreelancerAvailabilityScreen } from './src/screens/FreelancerAvailabilityScreen';
 import { FreelancerBookingsScreen } from './src/screens/FreelancerBookingsScreen';
@@ -42,6 +43,7 @@ export type RootStackParamList = {
   BookingChat: { bookingId: string; serviceName: string; preview?: boolean };
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
+  FreelancerProfileHub: undefined;
   FreelancerServices: { preview?: boolean } | undefined;
   Portfolio: undefined;
   FreelancerAvailability: { preview?: boolean } | undefined;
@@ -98,7 +100,7 @@ export default function App() {
     if (target === 'home') navigationRef.navigate('Freelancer', { role: 'freelancer' });
     if (target === 'bookings') navigationRef.navigate('FreelancerBookings');
     if (target === 'earnings') navigationRef.navigate('FreelancerEarnings');
-    if (target === 'profile') navigationRef.navigate('FreelancerOnboarding');
+    if (target === 'profile') navigationRef.navigate('FreelancerProfileHub');
   };
 
   useEffect(() => {
@@ -217,6 +219,7 @@ export default function App() {
           component={LocationTrackingScreen}
           options={{ title: 'Travel tracking' }}
         />
+        <Stack.Screen name="FreelancerProfileHub" component={FreelancerProfileHubScreen} options={{ title: 'Profile' }} />
         <Stack.Screen name="SupportChat" component={SupportChatScreen} options={{ title: 'Help and support' }} />
       </Stack.Navigator>
     </NavigationContainer>

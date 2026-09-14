@@ -4,7 +4,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
-import { getFreelancerProfile, requestFreelancerAccess } from '../lib/profile';
+import { requestFreelancerAccess } from '../lib/profile';
 import { getServiceCatalog, type Service } from '../lib/serviceCatalog';
 import { supabase } from '../lib/supabase';
 import { signOut } from '../services/auth';
@@ -95,33 +95,6 @@ export function DashboardScreen({ navigation, route }: Props) {
       isMounted = false;
     };
   }, [isPreview, role]);
-
-  const openFreelancerServices = async () => {
-    setServiceAccessError('');
-    if (!supabase) {
-      navigation.navigate('FreelancerServices');
-      return;
-    }
-
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) {
-      setServiceAccessError('Your session has expired. Please sign in again.');
-      return;
-    }
-
-    const result = await getFreelancerProfile(data.user.id);
-    if (result.error) {
-      setServiceAccessError(result.error.message);
-      return;
-    }
-    if (!result.profile || !result.profile.onboarding_completed) {
-      setServiceAccessError('Complete your freelancer profile before adding services.');
-      navigation.navigate('FreelancerOnboarding');
-      return;
-    }
-
-    navigation.navigate('FreelancerServices');
-  };
 
   const becomeFreelancer = async () => {
     if (!supabase) {
@@ -242,22 +215,6 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
         </View>
       )}
-      {role === 'customer' && !isPreview && (
-        <>
-          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('Search')}>
-            <Text style={styles.primaryButtonText}>Search freelancers</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('CustomerBooking')}>
-            <Text style={styles.secondaryButtonText}>Browse all services</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('CustomerBookings')}>
-            <Text style={styles.secondaryButtonText}>View my bookings</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
-            <Text style={styles.secondaryButtonText}>View notifications</Text>
-          </Pressable>
-        </>
-      )}
       {role === 'customer' && isPreview && (
         <View style={styles.previewSection}>
           <Text style={styles.previewTitle}>Preview customer tools</Text>
@@ -274,32 +231,6 @@ export function DashboardScreen({ navigation, route }: Props) {
             <Text style={styles.secondaryButtonText}>Preview booking history</Text>
           </Pressable>
         </View>
-      )}
-      {role === 'freelancer' && !isPreview && (
-        <>
-          <Pressable style={styles.primaryButton} onPress={() => navigation.navigate('FreelancerOnboarding')}>
-            <Text style={styles.primaryButtonText}>Complete freelancer profile</Text>
-          </Pressable>
-          {!!serviceAccessError && <Text style={styles.errorText}>{serviceAccessError}</Text>}
-          <Pressable style={styles.secondaryButton} onPress={() => void openFreelancerServices()}>
-            <Text style={styles.secondaryButtonText}>Manage services and pricing</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Portfolio')}>
-            <Text style={styles.secondaryButtonText}>Manage portfolio photos</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerAvailability')}>
-            <Text style={styles.secondaryButtonText}>Set availability</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerBookings')}>
-            <Text style={styles.secondaryButtonText}>Manage bookings</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('FreelancerEarnings')}>
-            <Text style={styles.secondaryButtonText}>View earnings</Text>
-          </Pressable>
-          <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('Notifications')}>
-            <Text style={styles.secondaryButtonText}>View notifications</Text>
-          </Pressable>
-        </>
       )}
       {role === 'freelancer' && isPreview && (
         <View style={styles.previewSection}>
@@ -344,11 +275,6 @@ export function DashboardScreen({ navigation, route }: Props) {
             <Text style={styles.secondaryButtonText}>Preview travel tracking</Text>
           </Pressable>
         </View>
-      )}
-      {!isPreview && role !== 'admin' && (
-        <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('SupportChat')}>
-          <Text style={styles.secondaryButtonText}>Chat with support</Text>
-        </Pressable>
       )}
       {isPreview ? (
         <Pressable style={styles.signOutButton} onPress={() => navigation.goBack()}>
