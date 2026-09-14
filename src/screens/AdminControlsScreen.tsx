@@ -83,8 +83,8 @@ export function AdminControlsScreen() {
                 <Pressable style={styles.smallButton} onPress={() => void updateVerification(account.id, 'approved')}><Text style={styles.smallButtonText}>Approve + email</Text></Pressable>
                 <Pressable style={styles.outlineButton} onPress={() => void updateVerification(account.id, 'rejected')}><Text style={styles.outlineButtonText}>Reject + email</Text></Pressable>
               </View>
-              <Text style={styles.documentStatus}>IC: {documentsByFreelancer[account.id]?.some((document) => document.document_type === 'government_id') ? 'uploaded' : 'missing'} · Certificate: {documentsByFreelancer[account.id]?.some((document) => document.document_type === 'certificate') ? 'uploaded' : 'missing'}</Text>
-              {documentsByFreelancer[account.id]?.map((document) => <Pressable key={document.id} style={styles.documentButton} onPress={() => void viewDocument(document)}><Text style={styles.outlineButtonText}>View {document.document_type === 'government_id' ? 'IC' : 'certificate'}</Text></Pressable>)}
+              <Text style={styles.documentStatus}>IC or passport: {documentsByFreelancer[account.id]?.some((document) => document.document_type === 'government_id') ? 'uploaded' : 'missing'} · Certificate: {documentsByFreelancer[account.id]?.some((document) => document.document_type === 'certificate') ? 'uploaded' : 'missing'}</Text>
+              {documentsByFreelancer[account.id]?.map((document) => <Pressable key={document.id} style={styles.documentButton} onPress={() => void viewDocument(document)}><Text style={styles.outlineButtonText}>View {document.document_type === 'government_id' ? 'IC or passport' : 'certificate'}</Text></Pressable>)}
             </>
           )}
           <Pressable style={styles.outlineButton} onPress={() => void update(() => setAccountSuspension(account.id, !account.suspended_at))}>

@@ -355,10 +355,10 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         </View>
       </View>
       <Text style={styles.sectionLabel}>Verification documents</Text>
-      <Text style={styles.helperText}>Upload a clear image of your IC and a relevant lash certification. These documents are private and visible only to platform administrators for manual review.</Text>
+      <Text style={styles.helperText}>Upload a clear image of your IC or passport and a relevant lash certification. These documents are private and visible only to platform administrators for manual review.</Text>
       {(['government_id', 'certificate'] as const).map((documentType) => {
         const uploaded = verificationDocuments.some((document) => document.document_type === documentType);
-        const label = documentType === 'government_id' ? 'IC / government ID' : 'Lash certification';
+        const label = documentType === 'government_id' ? 'IC or passport' : 'Lash certification';
         return (
           <Pressable key={documentType} style={styles.documentButton} disabled={uploadingDocumentType !== null} onPress={() => void handleUploadVerificationDocument(documentType)}>
             <Text style={styles.documentButtonTitle}>{uploadingDocumentType === documentType ? 'Uploading…' : uploaded ? `${label} uploaded — replace` : `Upload ${label}`}</Text>
