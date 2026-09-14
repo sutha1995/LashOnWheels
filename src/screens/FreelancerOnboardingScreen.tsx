@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { pickProfilePhotoUrl } from '../lib/portfolio';
+import { getVerificationDocuments, uploadVerificationDocument, type VerificationDocument, type VerificationDocumentType } from '../lib/verificationDocuments';
 import { draftFreelancerBio, getOnboardingGuidance, researchLashTrends, type ResearchSource } from '../lib/ai';
 import {
   clearFreelancerOnboardingDraft,
@@ -29,6 +30,8 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [isSettingBaseLocation, setIsSettingBaseLocation] = useState(false);
   const [locationStatus, setLocationStatus] = useState('');
   const [isPickingPhoto, setIsPickingPhoto] = useState(false);
+  const [verificationDocuments, setVerificationDocuments] = useState<VerificationDocument[]>([]);
+  const [uploadingDocumentType, setUploadingDocumentType] = useState<VerificationDocumentType | null>(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -56,10 +59,11 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         return;
       }
 
-      const [accountResult, result, draftResult] = await Promise.all([
+      const [accountResult, result, draftResult, documentsResult] = await Promise.all([
         getProfile(data.user.id),
         getFreelancerProfile(data.user.id),
         getFreelancerOnboardingDraft(data.user.id),
+        getVerificationDocuments(data.user.id),
       ]);
       if (!isMounted) {
         return;
@@ -91,6 +95,8 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         applyDraft(draftResult.draft);
         setDraftStatus('Your saved draft has been restored.');
       }
+      if (documentsResult.error) setError(documentsResult.error.message);
+      else setVerificationDocuments(documentsResult.documents);
       setIsLoading(false);
     });
 
@@ -262,6 +268,18 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
     }
   };
 
+  const handleUploadVerificationDocument = async (documentType: VerificationDocumentType) => {
+    setError('');
+    if (!supabase) { setError('Connect Supabase before uploading verification documents.'); return; }
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) { setError('Your session has expired. Please sign in again.'); return; }
+    setUploadingDocumentType(documentType);
+    const result = await uploadVerificationDocument(data.user.id, documentType);
+    setUploadingDocumentType(null);
+    if (result.error) { setError(result.error.message); return; }
+    if (result.document) setVerificationDocuments((current) => [...current.filter((document) => document.document_type !== documentType), result.document!]);
+  };
+
   const handleDraftBio = async () => {
     setError('');
     if (!displayName.trim() || !serviceArea.trim()) { setError('Add your display name and service area first.'); return; }
@@ -336,6 +354,18 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
           )}
         </View>
       </View>
+      <Text style={styles.sectionLabel}>Verification documents</Text>
+      <Text style={styles.helperText}>Upload a clear image of your IC and a relevant lash certification. These documents are private and visible only to platform administrators for manual review.</Text>
+      {(['government_id', 'certificate'] as const).map((documentType) => {
+        const uploaded = verificationDocuments.some((document) => document.document_type === documentType);
+        const label = documentType === 'government_id' ? 'IC / government ID' : 'Lash certification';
+        return (
+          <Pressable key={documentType} style={styles.documentButton} disabled={uploadingDocumentType !== null} onPress={() => void handleUploadVerificationDocument(documentType)}>
+            <Text style={styles.documentButtonTitle}>{uploadingDocumentType === documentType ? 'Uploading…' : uploaded ? `${label} uploaded — replace` : `Upload ${label}`}</Text>
+            <Text style={styles.documentButtonBody}>{uploaded ? 'Ready for administrator review' : 'Choose a clear JPG or PNG image'}</Text>
+          </Pressable>
+        );
+      })}
       <TextInput
         placeholder="Professional display name"
         value={displayName}
@@ -478,6 +508,9 @@ const styles = StyleSheet.create({
   helperText: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginBottom: 14, marginTop: -4 },
   fieldLabel: { color: theme.colors.ink, fontSize: 15, fontWeight: '800', marginBottom: 4, marginTop: 2 },
   fieldHint: { color: theme.colors.muted, fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  documentButton: { backgroundColor: theme.colors.white, borderColor: theme.colors.accent, borderRadius: 12, borderStyle: 'dashed', borderWidth: 1, marginBottom: 12, padding: 16 },
+  documentButtonTitle: { color: theme.colors.ink, fontWeight: '800', textAlign: 'center' },
+  documentButtonBody: { color: theme.colors.muted, fontSize: 12, marginTop: 5, textAlign: 'center' },
   locationStatus: { color: '#067647', fontSize: 13, lineHeight: 18, marginBottom: 14, marginTop: 8, textAlign: 'center' },
   draftStatus: { color: '#067647', fontSize: 13, marginBottom: 10, textAlign: 'center' },
   draftButton: { borderColor: theme.colors.ink, borderRadius: 14, borderWidth: 1, marginTop: 8, padding: 16 },

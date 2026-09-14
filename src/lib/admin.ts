@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { VerificationDocument } from './verificationDocuments';
 
 export type AdminAccount = {
   id: string;
@@ -46,4 +47,13 @@ export async function setAccountSuspension(id: string, suspended: boolean) {
 export async function setServiceActive(id: string, active: boolean) {
   if (!supabase) return { error: unavailable() };
   return supabase.rpc('admin_set_service_active', { p_service_id: id, p_active: active });
+}
+
+export async function getAdminVerificationDocuments(freelancerId: string) {
+  if (!supabase) return { documents: [] as VerificationDocument[], error: unavailable() };
+  const { data, error } = await supabase
+    .from('freelancer_verification_documents')
+    .select('id, freelancer_id, document_type, storage_path, file_name, mime_type, created_at')
+    .eq('freelancer_id', freelancerId);
+  return { documents: (data ?? []) as VerificationDocument[], error };
 }
