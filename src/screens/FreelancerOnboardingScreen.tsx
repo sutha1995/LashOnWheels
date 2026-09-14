@@ -6,6 +6,12 @@ import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { pickProfilePhotoUrl } from '../lib/portfolio';
 import { draftFreelancerBio, getOnboardingGuidance, researchLashTrends, type ResearchSource } from '../lib/ai';
+import {
+  clearFreelancerOnboardingDraft,
+  getFreelancerOnboardingDraft,
+  saveFreelancerOnboardingDraft,
+  type FreelancerOnboardingDraft,
+} from '../lib/onboardingDraft';
 import { getFreelancerProfile, getProfile, saveFreelancerProfile } from '../lib/profile';
 import { supabase } from '../lib/supabase';
 
@@ -24,6 +30,8 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftStatus, setDraftStatus] = useState('');
   const [isDraftingBio, setIsDraftingBio] = useState(false);
   const [trendIdeas, setTrendIdeas] = useState('');
   const [trendSources, setTrendSources] = useState<ResearchSource[]>([]);
@@ -46,7 +54,11 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         return;
       }
 
-      const [accountResult, result] = await Promise.all([getProfile(data.user.id), getFreelancerProfile(data.user.id)]);
+      const [accountResult, result, draftResult] = await Promise.all([
+        getProfile(data.user.id),
+        getFreelancerProfile(data.user.id),
+        getFreelancerOnboardingDraft(data.user.id),
+      ]);
       if (!isMounted) {
         return;
       }
@@ -71,6 +83,11 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         if (result.profile.base_latitude !== null && result.profile.base_longitude !== null) {
           setBaseCoordinates({ latitude: result.profile.base_latitude, longitude: result.profile.base_longitude });
         }
+      } else if (draftResult.error) {
+        setError(draftResult.error.message);
+      } else if (draftResult.draft) {
+        applyDraft(draftResult.draft);
+        setDraftStatus('Your saved draft has been restored.');
       }
       setIsLoading(false);
     });
@@ -79,6 +96,53 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       isMounted = false;
     };
   }, [navigation]);
+
+  const getDraftValues = (): FreelancerOnboardingDraft => ({
+    displayName,
+    bio,
+    experienceYears,
+    serviceArea,
+    maxTravelDistance,
+    travelFee,
+    profilePhotoUrl,
+    baseCoordinates,
+  });
+
+  const applyDraft = (draft: FreelancerOnboardingDraft) => {
+    setDisplayName(draft.displayName ?? '');
+    setBio(draft.bio ?? '');
+    setExperienceYears(draft.experienceYears ?? '0');
+    setServiceArea(draft.serviceArea ?? '');
+    setMaxTravelDistance(draft.maxTravelDistance ?? '10');
+    setTravelFee(draft.travelFee ?? '0');
+    setProfilePhotoUrl(draft.profilePhotoUrl ?? null);
+    setBaseCoordinates(draft.baseCoordinates ?? null);
+  };
+
+  const handleSaveDraft = async () => {
+    setError('');
+    setDraftStatus('');
+    if (!supabase) {
+      setError('Connect Supabase before saving a draft.');
+      return;
+    }
+
+    setIsSavingDraft(true);
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      setError('Your session has expired. Please sign in again.');
+      setIsSavingDraft(false);
+      return;
+    }
+
+    const result = await saveFreelancerOnboardingDraft(data.user.id, getDraftValues());
+    setIsSavingDraft(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+    setDraftStatus('Draft saved. You can come back and continue anytime.');
+  };
 
   const handleSave = async () => {
     setError('');
@@ -130,6 +194,7 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       setError(result.error.message);
       return;
     }
+    void clearFreelancerOnboardingDraft(data.user.id);
     navigation.goBack();
   };
 
@@ -318,6 +383,10 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         style={styles.input}
       />
       {!!error && <Text style={styles.errorText}>{error}</Text>}
+      {!!draftStatus && <Text style={styles.draftStatus}>{draftStatus}</Text>}
+      <Pressable style={styles.draftButton} disabled={isSavingDraft || isSaving} onPress={() => void handleSaveDraft()}>
+        <Text style={styles.draftButtonText}>{isSavingDraft ? 'Saving draft…' : 'Save draft'}</Text>
+      </Pressable>
       <Pressable style={styles.primaryButton} disabled={isSaving} onPress={() => void handleSave()}>
         <Text style={styles.primaryButtonText}>{isSaving ? 'Saving…' : 'Save and continue'}</Text>
       </Pressable>
@@ -366,6 +435,9 @@ const styles = StyleSheet.create({
   photoRemoveButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },
   sectionLabel: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginBottom: 12, marginTop: 10 },
   helperText: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginBottom: 14, marginTop: -4 },
+  draftStatus: { color: '#067647', fontSize: 13, marginBottom: 10, textAlign: 'center' },
+  draftButton: { borderColor: theme.colors.ink, borderRadius: 14, borderWidth: 1, marginTop: 8, padding: 16 },
+  draftButtonText: { color: theme.colors.ink, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 8, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   errorText: { color: '#B42318', fontSize: 13, marginBottom: 8, textAlign: 'center' },
