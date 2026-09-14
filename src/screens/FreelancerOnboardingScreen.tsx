@@ -206,10 +206,18 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
     const permission = await Location.requestForegroundPermissionsAsync();
     if (permission.status !== 'granted') { setError('Location permission is required to set your search location.'); return; }
     setIsSettingBaseLocation(true);
+    let coordinates: { latitude: number; longitude: number };
     try {
-      const current = await Location.getCurrentPositionAsync({});
-      const coordinates = { latitude: current.coords.latitude, longitude: current.coords.longitude };
+      const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      coordinates = { latitude: current.coords.latitude, longitude: current.coords.longitude };
       setBaseCoordinates(coordinates);
+    } catch {
+      setError('We could not get your device location. Check that browser location access is allowed, then try again.');
+      setIsSettingBaseLocation(false);
+      return;
+    }
+
+    try {
       const addresses = await Location.reverseGeocodeAsync(coordinates);
       const address = addresses[0];
       const locality = address ? [address.city ?? address.district ?? address.subregion, address.region].filter(
@@ -223,7 +231,7 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         setLocationStatus('Search location saved. Please add your service area manually.');
       }
     } catch {
-      setError('Unable to read your current location. Try again or enter your service area manually.');
+      setLocationStatus('Search location saved, but we could not detect the service area. Please enter it manually.');
     } finally {
       setIsSettingBaseLocation(false);
     }
