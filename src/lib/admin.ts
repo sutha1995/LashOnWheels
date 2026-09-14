@@ -36,7 +36,9 @@ export async function getAdminServices() {
 
 export async function setFreelancerVerification(id: string, status: 'pending' | 'approved' | 'rejected') {
   if (!supabase) return { error: unavailable() };
-  return supabase.rpc('admin_set_freelancer_verification', { p_freelancer_id: id, p_status: status });
+  const { data, error } = await supabase.functions.invoke('notify-verification-decision', { body: { freelancerId: id, status } });
+  const emailSent = data && typeof data === 'object' && 'emailSent' in data && data.emailSent === true;
+  return { error: await getFunctionError(error), emailSent };
 }
 
 export async function setAccountSuspension(id: string, suspended: boolean) {
@@ -47,6 +49,18 @@ export async function setAccountSuspension(id: string, suspended: boolean) {
 export async function setServiceActive(id: string, active: boolean) {
   if (!supabase) return { error: unavailable() };
   return supabase.rpc('admin_set_service_active', { p_service_id: id, p_active: active });
+}
+
+async function getFunctionError(error: unknown) {
+  if (error && typeof error === 'object' && 'context' in error && error.context instanceof Response) {
+    try {
+      const payload = await error.context.clone().json();
+      if (payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string') return new Error(payload.error);
+    } catch {
+      // Use the SDK error below.
+    }
+  }
+  return error instanceof Error ? error : null;
 }
 
 export async function getAdminVerificationDocuments(freelancerId: string) {

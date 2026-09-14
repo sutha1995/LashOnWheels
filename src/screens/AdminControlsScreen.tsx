@@ -44,6 +44,14 @@ export function AdminControlsScreen() {
     await load();
   };
 
+  const updateVerification = async (id: string, status: 'approved' | 'rejected') => {
+    setError('');
+    const result = await setFreelancerVerification(id, status);
+    if (result.error) { setError(result.error.message); return; }
+    if (!result.emailSent) setError('The application status was updated, but its email could not be delivered.');
+    await load();
+  };
+
   const viewDocument = async (document: VerificationDocument) => {
     const result = await getVerificationDocumentUrl(document.storage_path);
     if (result.error || !result.url) { setError(result.error?.message ?? 'Unable to open this verification document.'); return; }
@@ -72,8 +80,8 @@ export function AdminControlsScreen() {
             <>
               <View style={styles.actionRow}>
                 <Text style={styles.status}>Verification: {account.verification_status ?? 'pending'}</Text>
-                <Pressable style={styles.smallButton} onPress={() => void update(() => setFreelancerVerification(account.id, 'approved'))}><Text style={styles.smallButtonText}>Approve</Text></Pressable>
-                <Pressable style={styles.outlineButton} onPress={() => void update(() => setFreelancerVerification(account.id, 'rejected'))}><Text style={styles.outlineButtonText}>Reject</Text></Pressable>
+                <Pressable style={styles.smallButton} onPress={() => void updateVerification(account.id, 'approved')}><Text style={styles.smallButtonText}>Approve + email</Text></Pressable>
+                <Pressable style={styles.outlineButton} onPress={() => void updateVerification(account.id, 'rejected')}><Text style={styles.outlineButtonText}>Reject + email</Text></Pressable>
               </View>
               <Text style={styles.documentStatus}>IC: {documentsByFreelancer[account.id]?.some((document) => document.document_type === 'government_id') ? 'uploaded' : 'missing'} · Certificate: {documentsByFreelancer[account.id]?.some((document) => document.document_type === 'certificate') ? 'uploaded' : 'missing'}</Text>
               {documentsByFreelancer[account.id]?.map((document) => <Pressable key={document.id} style={styles.documentButton} onPress={() => void viewDocument(document)}><Text style={styles.outlineButtonText}>View {document.document_type === 'government_id' ? 'IC' : 'certificate'}</Text></Pressable>)}
