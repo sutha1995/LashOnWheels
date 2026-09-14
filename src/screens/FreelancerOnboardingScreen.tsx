@@ -26,6 +26,8 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   const [travelFee, setTravelFee] = useState('0');
   const [profilePhotoUrl, setProfilePhotoUrl] = useState<string | null>(null);
   const [baseCoordinates, setBaseCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [isSettingBaseLocation, setIsSettingBaseLocation] = useState(false);
+  const [locationStatus, setLocationStatus] = useState('');
   const [isPickingPhoto, setIsPickingPhoto] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -199,10 +201,32 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
   };
 
   const setCurrentBaseLocation = async () => {
+    setError('');
+    setLocationStatus('');
     const permission = await Location.requestForegroundPermissionsAsync();
     if (permission.status !== 'granted') { setError('Location permission is required to set your search location.'); return; }
-    const current = await Location.getCurrentPositionAsync({});
-    setBaseCoordinates({ latitude: current.coords.latitude, longitude: current.coords.longitude });
+    setIsSettingBaseLocation(true);
+    try {
+      const current = await Location.getCurrentPositionAsync({});
+      const coordinates = { latitude: current.coords.latitude, longitude: current.coords.longitude };
+      setBaseCoordinates(coordinates);
+      const addresses = await Location.reverseGeocodeAsync(coordinates);
+      const address = addresses[0];
+      const locality = address ? [address.city ?? address.district ?? address.subregion, address.region].filter(
+        (part): part is string => Boolean(part?.trim()),
+      ) : [];
+      const serviceAreaFromLocation = [...new Set(locality)].join(', ');
+      if (serviceAreaFromLocation) {
+        setServiceArea(serviceAreaFromLocation);
+        setLocationStatus('Search location saved and service area filled in. You can edit it if needed.');
+      } else {
+        setLocationStatus('Search location saved. Please add your service area manually.');
+      }
+    } catch {
+      setError('Unable to read your current location. Try again or enter your service area manually.');
+    } finally {
+      setIsSettingBaseLocation(false);
+    }
   };
 
   const handleChoosePhoto = async () => {
@@ -348,9 +372,10 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
           <Text style={styles.researchBody}>{profileReview}</Text>
         </View>
       )}
-      <Pressable style={styles.photoButton} onPress={() => void setCurrentBaseLocation()}>
-        <Text style={styles.photoButtonText}>{baseCoordinates ? 'Search location saved' : 'Set search location'}</Text>
+      <Pressable style={styles.photoButton} disabled={isSettingBaseLocation} onPress={() => void setCurrentBaseLocation()}>
+        <Text style={styles.photoButtonText}>{isSettingBaseLocation ? 'Finding location…' : baseCoordinates ? 'Update search location' : 'Set search location'}</Text>
       </Pressable>
+      {!!locationStatus && <Text style={styles.locationStatus}>{locationStatus}</Text>}
       <Text style={styles.fieldLabel}>Years of experience</Text>
       <Text style={styles.fieldHint}>Enter the number of full years you have worked as a lash technician.</Text>
       <TextInput
@@ -360,8 +385,10 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         keyboardType="numeric"
         style={styles.input}
       />
+      <Text style={styles.fieldLabel}>Service area</Text>
+      <Text style={styles.fieldHint}>This is filled from your search location and can be edited.</Text>
       <TextInput
-        placeholder="Service area (e.g. Rawang, Selangor)"
+        placeholder="For example: Rawang, Selangor"
         value={serviceArea}
         onChangeText={setServiceArea}
         style={styles.input}
@@ -443,6 +470,7 @@ const styles = StyleSheet.create({
   helperText: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginBottom: 14, marginTop: -4 },
   fieldLabel: { color: theme.colors.ink, fontSize: 15, fontWeight: '800', marginBottom: 4, marginTop: 2 },
   fieldHint: { color: theme.colors.muted, fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  locationStatus: { color: '#067647', fontSize: 13, lineHeight: 18, marginBottom: 14, marginTop: 8, textAlign: 'center' },
   draftStatus: { color: '#067647', fontSize: 13, marginBottom: 10, textAlign: 'center' },
   draftButton: { borderColor: theme.colors.ink, borderRadius: 14, borderWidth: 1, marginTop: 8, padding: 16 },
   draftButtonText: { color: theme.colors.ink, fontSize: 16, fontWeight: '700', textAlign: 'center' },
