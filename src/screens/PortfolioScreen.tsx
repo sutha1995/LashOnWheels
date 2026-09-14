@@ -13,6 +13,8 @@ export function PortfolioScreen({ navigation }: Props) {
   const [userId, setUserId] = useState('');
   const [photos, setPhotos] = useState<PortfolioPhoto[]>([]);
   const [caption, setCaption] = useState('');
+  const [styleTag, setStyleTag] = useState('');
+  const [hasClientConsent, setHasClientConsent] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
@@ -79,13 +81,15 @@ export function PortfolioScreen({ navigation }: Props) {
     }
 
     setIsWorking(true);
-    const result = await addPortfolioPhoto(userId, caption, source);
+    if (!hasClientConsent) { setError('Confirm that you have permission to publish this photo first.'); return; }
+    const result = await addPortfolioPhoto(userId, caption, styleTag, source);
     setIsWorking(false);
     if (result.error) {
       setError(result.error.message);
       return;
     }
     setCaption('');
+    setStyleTag(''); setHasClientConsent(false);
     await refreshPhotos();
   };
 
@@ -125,7 +129,7 @@ export function PortfolioScreen({ navigation }: Props) {
       <Text style={styles.eyebrow}>PORTFOLIO</Text>
       <Text style={styles.title}>Showcase your work</Text>
       <Text style={styles.subtitle}>
-        Add before-and-after photos and service examples. Customers see these on your profile.
+        Add up to 12 service examples. Customers see these on your profile.
       </Text>
       {!!error && <Text style={styles.errorText}>{error}</Text>}
       <View style={styles.addCard}>
@@ -136,6 +140,9 @@ export function PortfolioScreen({ navigation }: Props) {
           placeholder="e.g. Classic set on a returning client"
           style={styles.input}
         />
+        <Text style={styles.addLabel}>Service or style tag</Text>
+        <TextInput value={styleTag} onChangeText={setStyleTag} placeholder="e.g. Hybrid · Wispy" style={styles.input} />
+        <Pressable style={styles.consentRow} onPress={() => setHasClientConsent((value) => !value)}><Text style={styles.consentBox}>{hasClientConsent ? '✓' : ''}</Text><Text style={styles.consentText}>I have permission to publish this photo and it contains no private contact details.</Text></Pressable>
         <Pressable style={styles.primaryButton} disabled={isWorking} onPress={() => void handleAdd('library')}>
           <Text style={styles.primaryButtonText}>{isWorking ? 'Working…' : 'Choose from library'}</Text>
         </Pressable>
@@ -144,13 +151,14 @@ export function PortfolioScreen({ navigation }: Props) {
         </Pressable>
       </View>
       <Text style={styles.galleryHeading}>
-        {photos.length} photo{photos.length === 1 ? '' : 's'}
+        {photos.length}/12 public photos
       </Text>
       {photos.map((photo) => (
         <View key={photo.id} style={styles.photoCard}>
           <Image source={{ uri: photo.photo_url }} style={styles.photo} />
           <View style={styles.photoBody}>
             {!!photo.caption && <Text style={styles.photoCaption}>{photo.caption}</Text>}
+            {!!photo.style_tag && <Text style={styles.photoTag}>{photo.style_tag}</Text>}
             <Text style={styles.photoMeta}>Added {photo.created_at.slice(0, 10)}</Text>
             <Pressable style={styles.removeButton} disabled={isWorking} onPress={() => handleDelete(photo)}>
               <Text style={styles.removeButtonText}>Remove</Text>
@@ -206,9 +214,11 @@ const styles = StyleSheet.create({
   photo: { borderRadius: 12, height: 96, width: 96 },
   photoBody: { flex: 1, marginLeft: 12 },
   photoCaption: { color: theme.colors.ink, fontSize: 14, fontWeight: '700' },
+  photoTag: { color: theme.colors.accent, fontSize: 12, fontWeight: '700', marginTop: 4 },
   photoMeta: { color: theme.colors.muted, fontSize: 12, marginTop: 6 },
   removeButton: { borderColor: theme.colors.border, borderRadius: 10, borderWidth: 1, marginTop: 12, padding: 10 },
   removeButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },
   errorText: { color: '#B42318', fontSize: 13, marginBottom: 12, textAlign: 'center' },
   emptyText: { color: theme.colors.muted, marginTop: 8, textAlign: 'center' },
+  consentRow: { alignItems: 'flex-start', flexDirection: 'row', gap: 8, marginTop: 12 }, consentBox: { borderColor: theme.colors.accent, borderRadius: 4, borderWidth: 1, color: theme.colors.accent, fontWeight: '800', height: 20, textAlign: 'center', width: 20 }, consentText: { color: theme.colors.muted, flex: 1, fontSize: 12, lineHeight: 18 },
 });

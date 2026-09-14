@@ -6,6 +6,7 @@ export type Service = {
   description: string;
   duration_minutes: number;
   base_price: number;
+  catalog_image_url?: string | null;
 };
 
 export type FreelancerService = {
@@ -25,7 +26,7 @@ export async function getServiceCatalog() {
 
   const { data, error } = await supabase
     .from('services')
-    .select('id, name, description, duration_minutes, base_price')
+    .select('id, name, description, duration_minutes, base_price, catalog_image_url')
     .eq('active', true)
     .order('name');
 

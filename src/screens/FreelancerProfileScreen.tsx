@@ -154,6 +154,7 @@ export function FreelancerProfileScreen({ navigation, route }: Props) {
             {portfolio.map((photo) => (
               <View key={photo.id} style={styles.portfolioItem}>
                 <Image source={{ uri: photo.photo_url }} style={styles.portfolioPhoto} />
+                {!!photo.style_tag && <Text style={styles.portfolioTag}>{photo.style_tag}</Text>}
                 {!!photo.caption && <Text style={styles.portfolioCaption}>{photo.caption}</Text>}
               </View>
             ))}
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
   portfolioItem: { maxWidth: 180 },
   portfolioPhoto: { borderRadius: 12, height: 140, width: 140 },
   portfolioCaption: { color: theme.colors.muted, fontSize: 12, marginTop: 6 },
+  portfolioTag: { color: theme.colors.accent, fontSize: 12, fontWeight: '700', marginTop: 6 },
   servicesHeading: { color: theme.colors.ink, fontSize: 18, fontWeight: '800', marginBottom: 4, marginTop: 22 },
   serviceName: { color: theme.colors.ink, fontSize: 17, fontWeight: '800' },
   serviceMeta: { color: theme.colors.accent, fontSize: 13, fontWeight: '700', marginTop: 4 },

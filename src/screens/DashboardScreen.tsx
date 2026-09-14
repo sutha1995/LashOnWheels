@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
@@ -158,6 +158,7 @@ export function DashboardScreen({ navigation, route }: Props) {
                 style={styles.card}
                 onPress={() => navigation.navigate('Search', { serviceId: service.id, preview: isPreview || undefined })}
               >
+                {!!service.catalog_image_url && <Image source={{ uri: service.catalog_image_url }} style={styles.catalogImage} />}
                 <Text style={styles.cardNumber}>LASH SERVICES</Text>
                 <Text style={styles.cardTitle}>{service.name}</Text>
                 <Text style={styles.cardBody}>{service.description}</Text>
@@ -333,6 +334,7 @@ const styles = StyleSheet.create({
     padding: 18,
   },
   cardNumber: { color: theme.colors.accent, fontSize: 12, fontWeight: '800' },
+  catalogImage: { borderRadius: 12, height: 150, marginBottom: 4, width: '100%' },
   cardTitle: { color: theme.colors.ink, fontSize: 18, fontWeight: '800', marginTop: 12 },
   cardBody: { color: theme.colors.muted, marginTop: 6 },
   cardPrice: { color: theme.colors.accent, fontSize: 13, fontWeight: '700', marginTop: 10 },

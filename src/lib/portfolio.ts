@@ -7,6 +7,7 @@ export type PortfolioPhoto = {
   photo_url: string;
   storage_path: string;
   caption: string;
+  style_tag: string;
   position: number;
   created_at: string;
 };
@@ -23,7 +24,7 @@ export async function getPortfolioPhotos(freelancerId: string) {
 
   const { data, error } = await supabase
     .from('freelancer_portfolio_photos')
-    .select('id, freelancer_id, photo_url, storage_path, caption, position, created_at')
+    .select('id, freelancer_id, photo_url, storage_path, caption, style_tag, position, created_at')
     .eq('freelancer_id', freelancerId)
     .order('position')
     .order('created_at');
@@ -100,7 +101,7 @@ export async function pickProfilePhotoUrl(userId: string, source: PhotoSource = 
   return { url: `${data.publicUrl}?v=${Date.now()}`, error: null };
 }
 
-export async function addPortfolioPhoto(userId: string, caption: string, source: PhotoSource = 'library') {
+export async function addPortfolioPhoto(userId: string, caption: string, styleTag: string, source: PhotoSource = 'library') {
   if (!supabase) {
     return { photo: null, error: new Error('Supabase is not configured.') };
   }
@@ -109,6 +110,10 @@ export async function addPortfolioPhoto(userId: string, caption: string, source:
   if (trimmedCaption.length > maxCaptionLength) {
     return { photo: null, error: new Error('Captions must be 200 characters or fewer.') };
   }
+  if (styleTag.trim().length > 60) return { photo: null, error: new Error('Service or style tags must be 60 characters or fewer.') };
+  const existingResult = await getPortfolioPhotos(userId);
+  if (existingResult.error) return { photo: null, error: existingResult.error };
+  if (existingResult.photos.length >= 12) return { photo: null, error: new Error('Your public portfolio can have up to 12 photos. Remove one to add another.') };
 
   const { photo, error: pickError } = await pickPhoto(source);
   if (pickError || !photo) {
@@ -121,11 +126,6 @@ export async function addPortfolioPhoto(userId: string, caption: string, source:
     return { photo: null, error: uploadError };
   }
 
-  const existingResult = await getPortfolioPhotos(userId);
-  if (existingResult.error) {
-    return { photo: null, error: existingResult.error };
-  }
-
   const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(path);
   const { data: inserted, error: insertError } = await supabase
     .from('freelancer_portfolio_photos')
@@ -134,9 +134,10 @@ export async function addPortfolioPhoto(userId: string, caption: string, source:
       photo_url: publicUrlData.publicUrl,
       storage_path: path,
       caption: trimmedCaption,
+      style_tag: styleTag.trim(),
       position: existingResult.photos.length,
     })
-    .select('id, freelancer_id, photo_url, storage_path, caption, position, created_at')
+    .select('id, freelancer_id, photo_url, storage_path, caption, style_tag, position, created_at')
     .single();
 
   return { photo: inserted as PortfolioPhoto | null, error: insertError };
