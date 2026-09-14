@@ -5,7 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../../App';
 import { theme } from '../constants/theme';
 import { hasSupabaseConfig } from '../lib/env';
-import { clearPendingSignupRole, ensureProfile, setPendingSignupRole } from '../lib/profile';
+import { clearPendingSignupRole, ensureProfile, setPendingSignupRole, setPendingTermsAcceptance } from '../lib/profile';
 import { requestPasswordReset, signInWithEmail, signInWithGoogle, signUpWithEmail } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Auth'>;
@@ -21,6 +21,7 @@ export function AuthScreen({ navigation }: Props) {
   const [authError, setAuthError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const navigateToRole = (selectedRole: 'customer' | 'freelancer') => {
     if (selectedRole === 'freelancer') {
@@ -34,6 +35,7 @@ export function AuthScreen({ navigation }: Props) {
     setAuthError('');
     await clearPendingSignupRole();
     const selectedRole = mode === 'login' ? loginRole : role;
+    if (mode === 'register' && !termsAccepted) { setAuthError('Please accept the Terms and Conditions to create an account.'); return; }
     if (!hasSupabaseConfig) {
       navigateToRole(selectedRole);
       return;
@@ -50,6 +52,7 @@ export function AuthScreen({ navigation }: Props) {
 
     setIsSubmitting(true);
     try {
+      if (mode === 'register') await setPendingTermsAcceptance();
       const result =
         mode === 'login'
           ? await signInWithEmail(email, password)
@@ -97,6 +100,8 @@ export function AuthScreen({ navigation }: Props) {
     setIsGoogleLoading(true);
     try {
       const selectedRole = mode === 'login' ? loginRole : role;
+      if (mode === 'register' && !termsAccepted) { setAuthError('Please accept the Terms and Conditions to create an account.'); return; }
+      if (mode === 'register') await setPendingTermsAcceptance();
       await setPendingSignupRole(mode === 'register' ? role : 'customer');
       const { error } = await signInWithGoogle();
       if (error) {
@@ -120,6 +125,15 @@ export function AuthScreen({ navigation }: Props) {
       <Text style={styles.subtitle}>Book beautiful lash services at home.</Text>
       {mode === 'register' && (
         <TextInput placeholder="Full name" value={fullName} onChangeText={setFullName} style={styles.input} />
+      )}
+      {mode === 'register' && (
+        <>
+          <Pressable style={styles.termsRow} onPress={() => setTermsAccepted((value) => !value)}>
+            <Text style={styles.termsBox}>{termsAccepted ? '✓' : ''}</Text>
+            <Text style={styles.termsText}>I agree to the Terms and Conditions and Privacy Policy.</Text>
+          </Pressable>
+          <Pressable onPress={() => navigation.navigate('TermsConditions')}><Text style={styles.termsLink}>Read Terms and Conditions</Text></Pressable>
+        </>
       )}
       {mode === 'register' && (
         <TextInput placeholder="Phone number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={styles.input} />
@@ -242,4 +256,8 @@ const styles = StyleSheet.create({
   helperText: { color: theme.colors.muted, fontSize: 12, marginTop: 8, textAlign: 'center' },
   errorText: { color: '#B42318', fontSize: 13, marginTop: 12, textAlign: 'center' },
   link: { color: theme.colors.accent, fontWeight: '700', marginTop: 22, textAlign: 'center' },
+  termsRow: { alignItems: 'flex-start', flexDirection: 'row', gap: 10, marginTop: 14 },
+  termsBox: { borderColor: theme.colors.accent, borderRadius: 4, borderWidth: 1, color: theme.colors.accent, fontWeight: '800', height: 20, textAlign: 'center', width: 20 },
+  termsText: { color: theme.colors.muted, flex: 1, fontSize: 13, lineHeight: 19 },
+  termsLink: { color: theme.colors.accent, fontSize: 13, fontWeight: '700', marginTop: 8, textAlign: 'left' },
 });

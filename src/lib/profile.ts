@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 export type UserRole = 'customer' | 'freelancer' | 'admin';
 export type SignupRole = Exclude<UserRole, 'admin'>;
 const pendingRoleKey = 'lash-on-wheels.pending-role';
+const pendingTermsKey = 'lash-on-wheels.pending-terms';
 const pendingRoleLifetimeMs = 15 * 60 * 1000;
 
 export type Profile = {
@@ -13,6 +14,8 @@ export type Profile = {
   role: UserRole;
   requested_role: SignupRole;
   phone: string | null;
+  terms_accepted_at: string | null;
+  terms_version: string | null;
 };
 
 export type FreelancerProfile = {
@@ -38,7 +41,7 @@ export async function saveProfile(user: User, fullName: string, phone: string, r
   const { data, error } = await supabase
     .from('profiles')
     .insert({ id: user.id, full_name: fullName.trim(), phone: phone.trim() || null, role: 'customer', requested_role: requestedRole })
-    .select('id, full_name, role, requested_role, phone')
+    .select('id, full_name, role, requested_role, phone, terms_accepted_at, terms_version')
     .single();
 
   return { profile: data as Profile | null, error };
@@ -59,7 +62,7 @@ export async function getProfile(userId: string) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, full_name, role, requested_role, phone')
+    .select('id, full_name, role, requested_role, phone, terms_accepted_at, terms_version')
     .eq('id', userId)
     .single();
   return { profile: data as Profile | null, error };
@@ -110,6 +113,7 @@ export async function ensureProfile(user: User) {
   const { profile, error } = await getProfile(user.id);
   const isMissingProfile = error && 'code' in error && error.code === 'PGRST116';
   if (profile) {
+    if (await hasPendingTermsAcceptance()) await acceptTerms(user.id);
     await clearPendingSignupRole();
     return { profile, error };
   }
@@ -124,6 +128,7 @@ export async function ensureProfile(user: User) {
   const fullName = typeof user.user_metadata.full_name === 'string' ? user.user_metadata.full_name : '';
   const phone = typeof user.user_metadata.phone === 'string' ? user.user_metadata.phone : '';
   const result = await saveProfile(user, fullName, phone, requestedRole);
+  if (!result.error && await hasPendingTermsAcceptance()) await acceptTerms(user.id);
   if (!result.error) {
     await clearPendingSignupRole();
   }
@@ -140,6 +145,17 @@ export async function clearPendingSignupRole() {
   } catch {
     return;
   }
+}
+
+export async function setPendingTermsAcceptance() { await AsyncStorage.setItem(pendingTermsKey, 'accepted'); }
+
+async function hasPendingTermsAcceptance() { return (await AsyncStorage.getItem(pendingTermsKey)) === 'accepted'; }
+
+export async function acceptTerms(userId: string) {
+  if (!supabase) return { error: new Error('Supabase is not configured.') };
+  const { error } = await supabase.from('profiles').update({ terms_accepted_at: new Date().toISOString(), terms_version: '2026-10-14' }).eq('id', userId);
+  if (!error) await AsyncStorage.removeItem(pendingTermsKey);
+  return { error };
 }
 
 async function getPendingSignupRole(): Promise<SignupRole | null> {

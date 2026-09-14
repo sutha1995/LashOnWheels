@@ -26,6 +26,7 @@ import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupportChatScreen } from './src/screens/SupportChatScreen';
 import { ClientLogbookScreen } from './src/screens/ClientLogbookScreen';
+import { TermsConditionsScreen } from './src/screens/TermsConditionsScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { BottomNavigation } from './src/components/BottomNavigation';
 import { ensureProfile, type UserRole } from './src/lib/profile';
@@ -57,6 +58,7 @@ export type RootStackParamList = {
   LocationTracking: { bookingId?: string; freelancerId?: string; preview?: boolean } | undefined;
   SupportChat: undefined;
   ClientLogbook: undefined;
+  TermsConditions: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -223,6 +225,7 @@ export default function App() {
         <Stack.Screen name="FreelancerProfileHub" component={FreelancerProfileHubScreen} options={{ title: 'Profile' }} />
         <Stack.Screen name="ClientLogbook" component={ClientLogbookScreen} options={{ title: 'Client treatment logbook' }} />
         <Stack.Screen name="SupportChat" component={SupportChatScreen} options={{ title: 'Help and support' }} />
+        <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={{ title: 'Terms and conditions' }} />
       </Stack.Navigator>
     </NavigationContainer>
     {showBottomNavigation && <BottomNavigation audience={menuAudience} activeRoute={activeRoute} onSelect={selectMenuItem} />}
