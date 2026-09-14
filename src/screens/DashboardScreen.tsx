@@ -345,6 +345,11 @@ export function DashboardScreen({ navigation, route }: Props) {
           </Pressable>
         </View>
       )}
+      {!isPreview && role !== 'admin' && (
+        <Pressable style={styles.secondaryButton} onPress={() => navigation.navigate('SupportChat')}>
+          <Text style={styles.secondaryButtonText}>Chat with support</Text>
+        </Pressable>
+      )}
       {isPreview ? (
         <Pressable style={styles.signOutButton} onPress={() => navigation.goBack()}>
           <Text style={styles.signOutText}>Back to Admin control centre</Text>

@@ -17,6 +17,8 @@ const prompts = {
     'Suggest a practical starter menu of four to six services from this catalogue only: Classic Lash Extension, Hybrid Lash Extension, Volume Lash Extension, Mega Volume Lash Extension, Lash Lift, Lash Tint, Lash Lift + Tint, Lash Extension Refill, Lash Extension Removal. Base the suggestions only on the supplied artist context. Do not recommend prices, qualifications, guarantees, or safety claims. State that the artist should offer only services they are trained and insured to perform. Return only a concise bullet list.',
   profile_review:
     'Review the supplied freelancer onboarding details and provide a short, constructive checklist of up to five improvements. Focus on clarity, customer expectations, service area, travel settings, and missing profile information. Do not assess competence, invent qualifications, make medical or safety claims, or tell the artist they are approved. Return only the checklist.',
+  support_chat:
+    'You are the Lash On Wheels customer-support assistant. Give a concise, friendly answer based only on this app context: customers can search approved freelancers, book a mobile lash service, see booking status, reschedule eligible appointments, cancel eligible appointments, and receive notifications. Freelancers complete a profile, set travel distance and a fixed travel fee, manage services, availability, bookings, earnings, and portfolio photos. Freelancer profiles require verification before discovery. Travel settings mean the maximum service radius and a fixed fee added to the booking total. Never claim a booking is changed, access accounts, reveal private information, provide medical or legal advice, invent policy details, or guarantee an outcome. If the question needs account-specific investigation, a payment dispute, or a human decision, say to contact info@astramartechlab.com. Return only the answer, with no greeting unless it helps.',
 } as const;
 
 type Action = keyof typeof prompts | 'lash_trends';
@@ -64,20 +66,23 @@ Deno.serve(async (request) => {
   const { data: userData } = await userClient.auth.getUser();
   if (!userData.user) return jsonResponse({ error: 'Your session is invalid.' }, 401);
 
-  const { data: profile } = await userClient
-    .from('profiles')
-    .select('requested_role, role, suspended_at')
-    .eq('id', userData.user.id)
-    .maybeSingle();
-  if (!profile || profile.suspended_at || (profile.role !== 'freelancer' && profile.requested_role !== 'freelancer')) {
-    return jsonResponse({ error: 'Only active freelancer accounts can use AI drafting.' }, 403);
-  }
-
   const body = await request.json();
   const action = body?.action as Action;
   const source = typeof body?.source === 'string' ? body.source.trim().slice(0, 1500) : '';
   if ((!prompts[action as keyof typeof prompts] && action !== 'lash_trends') || !source) {
     return jsonResponse({ error: 'A supported action and source text are required.' }, 400);
+  }
+
+  const { data: profile } = await userClient
+    .from('profiles')
+    .select('requested_role, role, suspended_at')
+    .eq('id', userData.user.id)
+    .maybeSingle();
+  if (!profile || profile.suspended_at) {
+    return jsonResponse({ error: 'Your account is not able to use AI assistance.' }, 403);
+  }
+  if (action !== 'support_chat' && profile.role !== 'freelancer' && profile.requested_role !== 'freelancer') {
+    return jsonResponse({ error: 'Only active freelancer accounts can use AI drafting.' }, 403);
   }
 
   let systemPrompt = prompts[action as keyof typeof prompts];

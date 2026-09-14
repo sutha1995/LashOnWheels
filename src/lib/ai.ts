@@ -43,3 +43,10 @@ export async function getOnboardingGuidance(action: 'starter_service_menu' | 'pr
   const draft = data && typeof data === 'object' && 'draft' in data && typeof data.draft === 'string' ? data.draft : null;
   return { draft, error: await getAiFunctionError(error) };
 }
+
+export async function askSupportAssistant(question: string) {
+  if (!supabase) return { answer: null, error: new Error('Supabase is not configured.') };
+  const { data, error } = await supabase.functions.invoke('ai-assist', { body: { action: 'support_chat', source: question } });
+  const answer = data && typeof data === 'object' && 'draft' in data && typeof data.draft === 'string' ? data.draft : null;
+  return { answer, error: await getAiFunctionError(error) };
+}
