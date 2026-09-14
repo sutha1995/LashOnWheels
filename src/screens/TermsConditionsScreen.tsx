@@ -9,7 +9,7 @@ const Section = ({ title, children }: { title: string; children: string }) => <>
 export function TermsConditionsScreen({ navigation }: Props) {
   return <ScrollView contentContainerStyle={styles.container}>
     <Text style={styles.title}>Terms and Conditions</Text>
-    <Text style={styles.updated}>Last updated: 14 October 2026</Text>
+    <Text style={styles.updated}>Last updated: 14 September 2026</Text>
     <Text style={styles.body}>These terms govern Lash On Wheels, a marketplace that helps customers discover and book independent mobile lash technicians. By creating an account, booking, or offering services, you agree to them.</Text>
     <Section title="1. Marketplace role" children="Lash On Wheels provides the platform, account tools, booking records, and support flow. Freelancers are independent service providers, not employees, agents, or partners of Lash On Wheels. Each freelancer is responsible for their own qualifications, services, conduct, insurance, tax, and legal obligations." />
     <Section title="2. Customer bookings" children="Customers must provide accurate booking, location, and treatment information; attend or cancel according to the booking options shown; and pay applicable service and travel fees through the approved payment flow. A freelancer may accept, decline, stop, or reschedule a request where availability, safety, or service suitability requires it." />

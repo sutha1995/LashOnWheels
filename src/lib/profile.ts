@@ -153,7 +153,7 @@ async function hasPendingTermsAcceptance() { return (await AsyncStorage.getItem(
 
 export async function acceptTerms(userId: string) {
   if (!supabase) return { error: new Error('Supabase is not configured.') };
-  const { error } = await supabase.from('profiles').update({ terms_accepted_at: new Date().toISOString(), terms_version: '2026-10-14' }).eq('id', userId);
+  const { error } = await supabase.from('profiles').update({ terms_accepted_at: new Date().toISOString(), terms_version: '2026-09-14' }).eq('id', userId);
   if (!error) await AsyncStorage.removeItem(pendingTermsKey);
   return { error };
 }
