@@ -300,6 +300,9 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
         style={styles.input}
       />
       <Text style={styles.sectionLabel}>Travel settings</Text>
+      <Text style={styles.helperText}>
+        Choose how far you are willing to travel to customers and the fixed fee you charge for travelling. For example, 10 km and RM20 means you accept bookings within 10 km and add RM20 to the booking total.
+      </Text>
       <TextInput
         placeholder="Maximum travel distance in km"
         value={maxTravelDistance}
@@ -362,6 +365,7 @@ const styles = StyleSheet.create({
   photoRemoveButton: { borderColor: theme.colors.border, borderRadius: 12, borderWidth: 1, marginTop: 10, padding: 12 },
   photoRemoveButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },
   sectionLabel: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginBottom: 12, marginTop: 10 },
+  helperText: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginBottom: 14, marginTop: -4 },
   primaryButton: { backgroundColor: theme.colors.ink, borderRadius: 14, marginTop: 8, padding: 16 },
   primaryButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '700', textAlign: 'center' },
   errorText: { color: '#B42318', fontSize: 13, marginBottom: 8, textAlign: 'center' },
