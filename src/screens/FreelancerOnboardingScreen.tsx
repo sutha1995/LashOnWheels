@@ -351,8 +351,10 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       <Pressable style={styles.photoButton} onPress={() => void setCurrentBaseLocation()}>
         <Text style={styles.photoButtonText}>{baseCoordinates ? 'Search location saved' : 'Set search location'}</Text>
       </Pressable>
+      <Text style={styles.fieldLabel}>Years of experience</Text>
+      <Text style={styles.fieldHint}>Enter the number of full years you have worked as a lash technician.</Text>
       <TextInput
-        placeholder="Years of experience"
+        placeholder="For example: 3 years"
         value={experienceYears}
         onChangeText={setExperienceYears}
         keyboardType="numeric"
@@ -368,15 +370,19 @@ export function FreelancerOnboardingScreen({ navigation }: Props) {
       <Text style={styles.helperText}>
         Choose how far you are willing to travel to customers and the fixed fee you charge for travelling. For example, 10 km and RM20 means you accept bookings within 10 km and add RM20 to the booking total.
       </Text>
+      <Text style={styles.fieldLabel}>Maximum travel distance (km)</Text>
+      <Text style={styles.fieldHint}>For example: 10 means you accept bookings up to 10 km away.</Text>
       <TextInput
-        placeholder="Maximum travel distance in km"
+        placeholder="For example: 10 km"
         value={maxTravelDistance}
         onChangeText={setMaxTravelDistance}
         keyboardType="decimal-pad"
         style={styles.input}
       />
+      <Text style={styles.fieldLabel}>Base travel fee (RM)</Text>
+      <Text style={styles.fieldHint}>This fixed amount is added to each booking within your travel area.</Text>
       <TextInput
-        placeholder="Base travel fee in RM"
+        placeholder="For example: RM20"
         value={travelFee}
         onChangeText={setTravelFee}
         keyboardType="decimal-pad"
@@ -435,6 +441,8 @@ const styles = StyleSheet.create({
   photoRemoveButtonText: { color: '#B42318', fontWeight: '700', textAlign: 'center' },
   sectionLabel: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginBottom: 12, marginTop: 10 },
   helperText: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginBottom: 14, marginTop: -4 },
+  fieldLabel: { color: theme.colors.ink, fontSize: 15, fontWeight: '800', marginBottom: 4, marginTop: 2 },
+  fieldHint: { color: theme.colors.muted, fontSize: 13, lineHeight: 18, marginBottom: 8 },
   draftStatus: { color: '#067647', fontSize: 13, marginBottom: 10, textAlign: 'center' },
   draftButton: { borderColor: theme.colors.ink, borderRadius: 14, borderWidth: 1, marginTop: 8, padding: 16 },
   draftButtonText: { color: theme.colors.ink, fontSize: 16, fontWeight: '700', textAlign: 'center' },
