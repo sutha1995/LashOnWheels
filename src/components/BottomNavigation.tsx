@@ -5,17 +5,17 @@ type MenuItem = { label: string; icon: string; activeRoutes: string[]; target: '
 
 const customerItems: MenuItem[] = [
   { label: 'Discover', icon: '⌂', activeRoutes: ['Customer', 'Search', 'FreelancerProfile', 'CustomerBooking'], target: 'home' },
-  { label: 'Bookings', icon: '▣', activeRoutes: ['CustomerBookings', 'CustomerReview', 'BookingChat'], target: 'bookings' },
+  { label: 'Bookings', icon: '▣', activeRoutes: ['CustomerBookings', 'CustomerReview'], target: 'bookings' },
   { label: 'Updates', icon: '●', activeRoutes: ['Notifications'], target: 'updates' },
   { label: 'Help', icon: '?', activeRoutes: ['SupportChat'], target: 'help' },
 ];
 
 const freelancerItems: MenuItem[] = [
   { label: 'Home', icon: '⌂', activeRoutes: ['Freelancer'], target: 'home' },
-  { label: 'Bookings', icon: '▣', activeRoutes: ['FreelancerBookings', 'BookingChat'], target: 'bookings' },
+  { label: 'Bookings', icon: '▣', activeRoutes: ['FreelancerBookings'], target: 'bookings' },
   { label: 'Updates', icon: '●', activeRoutes: ['Notifications'], target: 'updates' },
   { label: 'Earnings', icon: '$', activeRoutes: ['FreelancerEarnings'], target: 'earnings' },
-  { label: 'Profile', icon: '◉', activeRoutes: ['FreelancerProfileHub', 'FreelancerOnboarding', 'FreelancerServices', 'FreelancerAvailability', 'Portfolio'], target: 'profile' },
+  { label: 'Profile', icon: '◉', activeRoutes: ['FreelancerProfileHub', 'FreelancerOnboarding', 'FreelancerServices', 'FreelancerAvailability', 'Portfolio', 'ClientLogbook'], target: 'profile' },
 ];
 
 type Props = { audience: 'customer' | 'freelancer'; activeRoute: string; onSelect: (target: MenuItem['target']) => void };

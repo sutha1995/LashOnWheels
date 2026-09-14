@@ -33,7 +33,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Lash On Wheels to access your photos to upload your profile, portfolio, and private verification documents.",
+          "photosPermission": "Allow Lash On Wheels to access your photos to upload your profile, portfolio, private verification documents, and private client treatment logs.",
           "cameraPermission": "Allow Lash On Wheels to access your camera so you can take profile and portfolio photos.",
           "microphonePermission": false
         }

@@ -13,7 +13,6 @@ import { DashboardScreen } from './src/screens/DashboardScreen';
 import { CustomerBookingScreen } from './src/screens/CustomerBookingScreen';
 import { CustomerBookingsScreen } from './src/screens/CustomerBookingsScreen';
 import { CustomerReviewScreen } from './src/screens/CustomerReviewScreen';
-import { BookingChatScreen } from './src/screens/BookingChatScreen';
 import { SearchScreen } from './src/screens/SearchScreen';
 import { FreelancerProfileScreen } from './src/screens/FreelancerProfileScreen';
 import { FreelancerOnboardingScreen } from './src/screens/FreelancerOnboardingScreen';
@@ -26,6 +25,7 @@ import { PortfolioScreen } from './src/screens/PortfolioScreen';
 import { NotificationsScreen } from './src/screens/NotificationsScreen';
 import { LocationTrackingScreen } from './src/screens/LocationTrackingScreen';
 import { SupportChatScreen } from './src/screens/SupportChatScreen';
+import { ClientLogbookScreen } from './src/screens/ClientLogbookScreen';
 import { SupabaseStatus } from './src/components/SupabaseStatus';
 import { BottomNavigation } from './src/components/BottomNavigation';
 import { ensureProfile, type UserRole } from './src/lib/profile';
@@ -40,6 +40,7 @@ export type RootStackParamList = {
   CustomerBooking: { preselectedServiceId?: string } | undefined;
   CustomerBookings: { preview?: boolean } | undefined;
   CustomerReview: { bookingId: string; serviceName: string; preview?: boolean };
+  // Retained only to type historical chat records; it is no longer registered or reachable in the app.
   BookingChat: { bookingId: string; serviceName: string; preview?: boolean };
   Freelancer: { role: 'freelancer'; preview?: boolean };
   FreelancerOnboarding: undefined;
@@ -55,6 +56,7 @@ export type RootStackParamList = {
   Notifications: { preview?: boolean } | undefined;
   LocationTracking: { bookingId?: string; freelancerId?: string; preview?: boolean } | undefined;
   SupportChat: undefined;
+  ClientLogbook: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -186,7 +188,6 @@ export default function App() {
         <Stack.Screen name="CustomerBooking" component={CustomerBookingScreen} options={{ title: 'Book a service' }} />
         <Stack.Screen name="CustomerBookings" component={CustomerBookingsScreen} options={{ title: 'My bookings' }} />
         <Stack.Screen name="CustomerReview" component={CustomerReviewScreen} options={{ title: 'Leave a review' }} />
-        <Stack.Screen name="BookingChat" component={BookingChatScreen} options={{ title: 'Booking chat' }} />
         <Stack.Screen name="Freelancer" component={DashboardScreen} initialParams={{ role: 'freelancer' }} />
         <Stack.Screen
           name="FreelancerOnboarding"
@@ -220,6 +221,7 @@ export default function App() {
           options={{ title: 'Travel tracking' }}
         />
         <Stack.Screen name="FreelancerProfileHub" component={FreelancerProfileHubScreen} options={{ title: 'Profile' }} />
+        <Stack.Screen name="ClientLogbook" component={ClientLogbookScreen} options={{ title: 'Client treatment logbook' }} />
         <Stack.Screen name="SupportChat" component={SupportChatScreen} options={{ title: 'Help and support' }} />
       </Stack.Navigator>
     </NavigationContainer>

@@ -15,6 +15,7 @@ export function FreelancerProfileHubScreen({ navigation }: Props) {
       <Pressable style={styles.button} onPress={() => navigation.navigate('FreelancerServices')}><Text style={styles.buttonText}>Services and pricing</Text></Pressable>
       <Pressable style={styles.button} onPress={() => navigation.navigate('FreelancerAvailability')}><Text style={styles.buttonText}>Availability</Text></Pressable>
       <Pressable style={styles.button} onPress={() => navigation.navigate('Portfolio')}><Text style={styles.buttonText}>Portfolio photos</Text></Pressable>
+      <Pressable style={styles.button} onPress={() => navigation.navigate('ClientLogbook')}><Text style={styles.buttonText}>Client treatment logbook</Text></Pressable>
       <Pressable style={styles.button} onPress={() => navigation.navigate('SupportChat')}><Text style={styles.buttonText}>Chat with support</Text></Pressable>
     </ScrollView>
   );
