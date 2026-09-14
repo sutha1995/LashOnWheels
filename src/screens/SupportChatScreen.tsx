@@ -49,7 +49,10 @@ export function SupportChatScreen() {
       setError(result.error?.message ?? 'Unable to create a support ticket.');
       return;
     }
-    setTicketStatus(`Ticket created: ${result.ticketId.slice(0, 8).toUpperCase()}. Our support team will review it.`);
+    const reference = result.ticketId.slice(0, 8).toUpperCase();
+    setTicketStatus(result.emailSent
+      ? `Ticket ${reference} created and emailed to support.`
+      : `Ticket ${reference} was created, but its email delivery needs attention.`);
   };
 
   return (
