@@ -218,6 +218,7 @@ export function FreelancerBookingsScreen({ navigation, route }: Props) {
               {paymentStatusLabels[booking.payment_status]}
             </Text>
             {!!booking.customer_note && <Text style={styles.note}>“{booking.customer_note}”</Text>}
+            {!!booking.treatment_consent?.[0] && <Text style={styles.consentStatus}>Treatment consent acknowledged by customer</Text>}
             {!!booking.health_disclosure?.[0] && (
               <View style={styles.healthCard}>
                 <Text style={styles.healthLabel}>CUSTOMER TREATMENT INFORMATION</Text>
@@ -338,6 +339,7 @@ const styles = StyleSheet.create({
   healthLabel: { color: theme.colors.ink, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 },
   healthHint: { color: theme.colors.muted, fontSize: 12, lineHeight: 17, marginTop: 6 },
   healthValue: { color: theme.colors.ink, lineHeight: 20, marginTop: 8 },
+  consentStatus: { color: '#067647', fontSize: 13, fontWeight: '700', marginTop: 14 },
   emptyCard: {
     backgroundColor: theme.colors.white,
     borderColor: theme.colors.border,

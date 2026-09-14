@@ -21,6 +21,7 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
   const [allergies, setAllergies] = useState('');
   const [medications, setMedications] = useState('');
   const [healthDisclosureConsent, setHealthDisclosureConsent] = useState(false);
+  const [serviceConsent, setServiceConsent] = useState(false);
   const [serviceAddress, setServiceAddress] = useState('');
   const [coordinates, setCoordinates] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState('');
@@ -99,6 +100,10 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
       setError('Confirm consent before sharing allergies or medications with the assigned freelancer.');
       return;
     }
+    if (!serviceConsent) {
+      setError('Confirm the treatment consent before requesting a booking.');
+      return;
+    }
 
     setIsSaving(true);
     const result = await createBooking(selectedServiceId, {
@@ -111,6 +116,7 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
       allergies: allergies.trim(),
       medications: medications.trim(),
       health_disclosure_consent: healthDisclosureConsent,
+      service_consent: serviceConsent,
     });
     setIsSaving(false);
     if (result.error || !result.booking) {
@@ -212,6 +218,12 @@ export function CustomerBookingScreen({ navigation, route }: Props) {
             <Text style={styles.consentBox}>{healthDisclosureConsent ? '✓' : ''}</Text>
             <Text style={styles.consentText}>I consent to share this information with the assigned freelancer for this appointment.</Text>
           </Pressable>
+          <Text style={styles.consentTitle}>Treatment consent</Text>
+          <Text style={styles.healthBody}>Please review before requesting. This cosmetic service is not medical care; the freelancer may decline or stop if they believe it is unsafe. Share any changes before the appointment and follow the aftercare provided.</Text>
+          <Pressable style={styles.consentRow} onPress={() => setServiceConsent((value) => !value)}>
+            <Text style={styles.consentBox}>{serviceConsent ? '✓' : ''}</Text>
+            <Text style={styles.consentText}>I confirm the information is accurate and consent to this treatment consultation and service.</Text>
+          </Pressable>
           <Pressable style={styles.locationButton} onPress={() => void useCurrentLocation()}>
             <Text style={styles.locationButtonText}>
               {coordinates ? 'Service location confirmed' : 'Use my current location'}
@@ -273,6 +285,7 @@ const styles = StyleSheet.create({
   },
   multilineInput: { minHeight: 76, textAlignVertical: 'top' },
   healthTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginTop: 20 },
+  consentTitle: { color: theme.colors.ink, fontSize: 16, fontWeight: '800', marginTop: 20 },
   healthBody: { color: theme.colors.muted, fontSize: 13, lineHeight: 19, marginTop: 6 },
   consentRow: { alignItems: 'flex-start', flexDirection: 'row', gap: 10, marginTop: 12 },
   consentBox: { borderColor: theme.colors.accent, borderRadius: 4, borderWidth: 1, color: theme.colors.accent, fontWeight: '800', height: 20, textAlign: 'center', width: 20 },
